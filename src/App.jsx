@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ShoppingCart, Package, ShoppingBag, Moon, BarChart3,
   Search, Menu, Bell, ChevronLeft, ChevronDown, ChevronUp,
   Plus, Minus, Check, X, Lock, TrendingUp, Wallet,
-  Save, Trash2, Power, Filter, RotateCcw, Download, Share2
+  Save, Trash2, Power, Filter, RotateCcw, Download, Share2, User,
+  Truck, Receipt, Pencil, ImagePlus
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════
@@ -21,6 +22,32 @@ const C = {
   card: '#FFFFFF',
   radius: 16,
   shadow: '0 1px 4px rgba(0,0,0,0.06)',
+};
+
+const DEFAULT_CATEGORIES = ['مشروبات', 'أكل', 'أخرى'];
+const ALL_FILTER = 'الكل';
+const CATEGORY_FILTER_PREFIX = 'category:';
+const MANAGE_CATEGORIES_LABEL = 'فئات ▾';
+
+const uniqueCategories = (items) => [
+  ...new Set(
+    items
+      .map(item => String(item || '').trim())
+      .filter(Boolean)
+  )
+];
+
+const getCategoryFilter = (category) => `${CATEGORY_FILTER_PREFIX}${category}`;
+const isCategoryFilter = (filter) => String(filter || '').startsWith(CATEGORY_FILTER_PREFIX);
+const categoryFromFilter = (filter) => String(filter || '').slice(CATEGORY_FILTER_PREFIX.length);
+
+const getDaysAgo = (value) => {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return 0;
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  return Math.max(0, Math.floor((todayStart - start) / 86400000));
 };
 
 const categoryColors = {
@@ -277,9 +304,11 @@ const arabicDays = ['السبت','الأحد','الإثنين','الثلاثاء
 export default function App() {
   const [activeTab, setActiveTab] = useState(0);
   const [products, setProducts] = useLocalStorage('pos_products', initialProducts);
+  const [categories, setCategories] = useLocalStorage('pos_categories', DEFAULT_CATEGORIES);
   const [cart, setCart] = useState([]);
   const [todaySales, setTodaySales] = useLocalStorage('pos_todaySales', []);
   const [todayPurchases, setTodayPurchases] = useLocalStorage('pos_todayPurchases', []);
+  const [debts] = useLocalStorage('pos_debts', []);
   const [allPurchases, setAllPurchases] = useLocalStorage('pos_allPurchases', [
     { id: 100, productId: 1, productName: 'عصير برتقال', emoji: '🥤', qty: 24, unitPrice: 18, total: 432, date: 'أمس' },
     { id: 101, productId: 2, productName: 'ماء 0.5L', emoji: '💧', qty: 48, unitPrice: 5, total: 240, date: 'الاثنين' },
@@ -310,6 +339,13 @@ export default function App() {
       setDayRecord(prev => ({ ...prev, openingQty: oq }));
     }
   }, []);
+
+  useEffect(() => {
+    setCategories(prev => {
+      const merged = uniqueCategories([...DEFAULT_CATEGORIES, ...prev, ...products.map(product => product.category)]);
+      return merged.length === prev.length && merged.every((category, index) => category === prev[index]) ? prev : merged;
+    });
+  }, [products, setCategories]);
 
   const showSuccess = (msg) => {
     setSuccessMsg(msg);
@@ -358,26 +394,34 @@ export default function App() {
   }, [cart, products]);
 
   // Purchase handler
-  const handlePurchase = useCallback((productId, qty, unitPrice) => {
-    const p = products.find(pr => pr.id === productId);
-    if (!p) return;
-    setProducts(prev => prev.map(pr =>
-      pr.id === productId ? { ...pr, qty: pr.qty + qty } : pr
-    ));
+  const handlePurchase = useCallback((supplier, items, totalAmount) => {
+    if (!items || items.length === 0) return null;
+    
+    // Update product quantities for all purchased items
+    setProducts(prev => prev.map(pr => {
+      const purchasedItem = items.find(i => i.productId === pr.id);
+      if (purchasedItem) {
+        return { ...pr, qty: pr.qty + purchasedItem.qty };
+      }
+      return pr;
+    }));
+    
+    const d = new Date();
+    const timeString = d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+    
     const record = {
       id: Date.now(),
-      productId,
-      productName: p.name,
-      emoji: p.emoji,
-      qty,
-      unitPrice,
-      total: qty * unitPrice,
-      date: 'اليوم',
+      date: `${getArabicDate().split('،')[0]} ${d.getDate()} ${['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'][d.getMonth()]} — ${timeString}`,
+      supplier: supplier || 'غير محدد',
+      items: items,
+      total: totalAmount,
     };
+    
     setTodayPurchases(prev => [...prev, record]);
     setAllPurchases(prev => [record, ...prev]);
-    showSuccess('تم حفظ الشراء بنجاح ✓');
-  }, [products]);
+    showSuccess('تم حفظ المشتريات بنجاح ✓');
+    return record;
+  }, []);
 
   // Close day handler: Save to past days and RESET today's arrays
   const handleCloseDay = useCallback(() => {
@@ -446,9 +490,35 @@ export default function App() {
     setEditingProduct(null);
   }, []);
 
+  const handleAddCategory = useCallback((name) => {
+    const clean = name.trim();
+    if (!clean) return false;
+    let changed = false;
+    setCategories(prev => {
+      const next = uniqueCategories([...DEFAULT_CATEGORIES, ...prev, clean]);
+      changed = next.length !== prev.length;
+      return next;
+    });
+    return changed;
+  }, [setCategories]);
+
+  const handleRenameCategory = useCallback((oldName, newName) => {
+    const clean = newName.trim();
+    if (!oldName || !clean) return false;
+    setCategories(prev => uniqueCategories([...DEFAULT_CATEGORIES, ...prev.map(category => category === oldName ? clean : category)]));
+    setProducts(prev => prev.map(product => product.category === oldName ? { ...product, category: clean } : product));
+    return true;
+  }, [setCategories]);
+
+  const handleDeleteCategory = useCallback((name) => {
+    if (DEFAULT_CATEGORIES.includes(name) || products.some(product => product.category === name)) return false;
+    setCategories(prev => uniqueCategories([...DEFAULT_CATEGORIES, ...prev.filter(category => category !== name)]));
+    return true;
+  }, [products, setCategories]);
+
   // Export Data Feature
   const handleExportData = () => {
-    const data = { products, todaySales, todayPurchases, allPurchases, pastDays, dayRecord };
+    const data = { products, categories, todaySales, todayPurchases, allPurchases, pastDays, dayRecord, debts };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -477,6 +547,7 @@ export default function App() {
     if (showProductForm) {
       return <ProductFormScreen
         product={editingProduct}
+        categories={categories}
         onSave={handleSaveProduct}
         onDelete={handleDeleteProduct}
         onRestore={handleRestoreProduct}
@@ -504,17 +575,23 @@ export default function App() {
       />;
     }
     switch(activeTab) {
-      case 0: return <SellScreen products={products} cart={cart} setCart={setCart} onSell={handleSell} />;
+      case 0: return <SellScreen products={products} categories={categories} cart={cart} setCart={setCart} onSell={handleSell} />;
       case 1: return <InventoryScreen
         products={products}
+        categories={categories}
+        onAddCategory={handleAddCategory}
+        onRenameCategory={handleRenameCategory}
+        onDeleteCategory={handleDeleteCategory}
         onAddProduct={() => { setEditingProduct(null); setShowProductForm(true); }}
         onEditProduct={(p) => { setEditingProduct(p); setShowProductForm(true); }}
       />;
       case 2: return <PurchaseScreen
         products={products.filter(p => p.is_active)}
+        categories={categories}
         onPurchase={handlePurchase}
         monthTotal={monthPurchasesTotal}
-        recentPurchases={allPurchases.slice(0, 5)}
+        recentPurchases={allPurchases.slice(0, 3)}
+        allPurchases={allPurchases}
       />;
       case 3: return <ReportsScreen
         products={products}
@@ -522,6 +599,7 @@ export default function App() {
         todaySalesTotal={todaySalesTotal}
         todayPurchasesTotal={todayPurchasesTotal}
         todayProfit={todayProfit}
+        debts={debts}
         onShowDetails={() => setReportView('details')}
         onShowCloseDay={() => setShowCloseDay(true)}
         onExport={handleExportData}
@@ -600,17 +678,365 @@ function BottomNav({ activeTab, setActiveTab, lowStockCount }) {
 /* ═══════════════════════════════════════════
    SCREEN 1: SELL (البيع)
    ═══════════════════════════════════════════ */
-function SellScreen({ products, cart, setCart, onSell }) {
+function HeaderIconButton({ onClick, children, label, badge }) {
+  return (
+    <button
+      aria-label={label}
+      onClick={onClick}
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        border: 'none',
+        background: 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: onClick ? 'pointer' : 'default',
+        position: 'relative',
+        padding: 0,
+      }}
+    >
+      {children}
+      {badge > 0 && (
+        <span style={{
+          position: 'absolute',
+          top: 2,
+          right: 2,
+          minWidth: 16,
+          height: 16,
+          padding: '0 4px',
+          borderRadius: 999,
+          background: C.red,
+          color: '#fff',
+          fontSize: 9,
+          fontWeight: 800,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box',
+        }}>{badge}</span>
+      )}
+    </button>
+  );
+}
+
+function AppHeader({ title, subtitle, left, right, border = false }) {
+  return (
+    <div style={{
+      background: '#fff',
+      padding: '16px 20px 12px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottom: border ? `1px solid ${C.border}` : 'none',
+      direction: 'ltr',
+    }}>
+      <div style={{ width: 80, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 4 }}>
+        {left}
+      </div>
+      <div style={{ flex: 1, minWidth: 0, textAlign: 'center', direction: 'rtl' }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: C.dark, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</h1>
+        {subtitle && <p style={{ fontSize: 12, color: C.gray, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subtitle}</p>}
+      </div>
+      <div style={{ width: 80, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+        {right}
+      </div>
+    </div>
+  );
+}
+
+function CategoryManagerSheet({ open, categories, products, selectedFilter, onSelectCategory, onAddCategory, onRenameCategory, onDeleteCategory, onClose }) {
+  const [mode, setMode] = useState('list');
+  const [draft, setDraft] = useState('');
+  const [editingCategory, setEditingCategory] = useState(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setMode('list');
+    setDraft('');
+    setEditingCategory(null);
+  }, [open]);
+
+  const counts = useMemo(() => {
+    const map = {};
+    categories.forEach(category => { map[category] = 0; });
+    products.forEach(product => {
+      if (!product.category) return;
+      map[product.category] = (map[product.category] || 0) + 1;
+    });
+    return map;
+  }, [categories, products]);
+
+  if (!open) return null;
+
+  const submit = () => {
+    const clean = draft.trim();
+    if (!clean) return;
+    const saved = mode === 'edit'
+      ? onRenameCategory(editingCategory, clean)
+      : onAddCategory(clean);
+    if (saved === false) return;
+    setMode('list');
+    setDraft('');
+    setEditingCategory(null);
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 220, animation: 'fadeInBg 0.2s ease' }} />
+      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '24px 24px 0 0', zIndex: 221, animation: 'slideUp 0.25s ease', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={18} color={C.dark} />
+          </button>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>الفئات</h2>
+          <div style={{ width: 36 }} />
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 16px' }}>
+          {categories.map(category => {
+            const count = counts[category] || 0;
+            const active = selectedFilter === getCategoryFilter(category);
+            const canDelete = count === 0 && !DEFAULT_CATEGORIES.includes(category);
+            const isEditing = mode === 'edit' && editingCategory === category;
+
+            if (isEditing) {
+              return (
+                <div key={category} style={{ padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
+                  <input value={draft} onChange={event => setDraft(event.target.value)} autoFocus style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, textAlign: 'right', direction: 'rtl', boxSizing: 'border-box', marginBottom: 8 }} />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={submit} style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>حفظ</button>
+                    <button onClick={() => { setMode('list'); setEditingCategory(null); }} style={{ flex: 1, padding: '10px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={category} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
+                <button onClick={() => { onSelectCategory(category); onClose(); }} style={{ flex: 1, border: active ? `1.5px solid ${C.blue}` : `1px solid ${C.border}`, background: active ? '#EFF6FF' : '#fff', borderRadius: 14, padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', direction: 'rtl' }}>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>{category}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: C.gray }}>{count} منتج</span>
+                </button>
+                <button onClick={() => { setMode('edit'); setDraft(category); setEditingCategory(category); }} style={{ width: 40, height: 40, borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <Pencil size={16} color={C.dark} />
+                </button>
+                {canDelete && (
+                  <button onClick={() => onDeleteCategory(category)} style={{ width: 40, height: 40, borderRadius: 12, border: 'none', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <Trash2 size={16} color={C.red} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          {mode === 'add' ? (
+            <div style={{ paddingTop: 14 }}>
+              <input value={draft} onChange={event => setDraft(event.target.value)} autoFocus placeholder="اسم الفئة" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, textAlign: 'right', direction: 'rtl', boxSizing: 'border-box', marginBottom: 8 }} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={submit} style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>حفظ</button>
+                <button onClick={() => setMode('list')} style={{ flex: 1, padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => { setMode('add'); setDraft(''); setEditingCategory(null); }} style={{ width: '100%', marginTop: 14, padding: '14px', borderRadius: 14, border: 'none', background: C.dark, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>إضافة فئة جديدة +</button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function CartDetailsSheet({ open, cart, products, setCart, onSell, onClose }) {
+  const items = useMemo(() => cart.map(item => {
+    const product = products.find(p => p.id === item.productId);
+    return product ? { ...item, product } : null;
+  }).filter(Boolean), [cart, products]);
+
+  const total = useMemo(() => items.reduce((sum, item) => sum + item.qty * item.product.sellPrice, 0), [items]);
+
+  if (!open) return null;
+
+  const updateQty = (productId, nextQty) => {
+    setCart(prev => prev.flatMap(item => {
+      if (item.productId !== productId) return [item];
+      const product = products.find(p => p.id === productId);
+      const maxQty = product?.qty || item.qty;
+      const qty = Math.max(0, Math.min(maxQty, nextQty));
+      return qty === 0 ? [] : [{ ...item, qty }];
+    }));
+  };
+
+  const completeSale = () => {
+    if (items.length === 0) return;
+    onSell();
+    onClose();
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 220, animation: 'fadeInBg 0.2s ease' }} />
+      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '24px 24px 0 0', zIndex: 221, animation: 'slideUp 0.25s ease', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={18} color={C.dark} />
+          </button>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>السلة</h2>
+          <div style={{ width: 36 }} />
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
+          {items.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>السلة فارغة</div>
+          ) : items.map(item => (
+            <div key={item.productId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
+              <button onClick={() => updateQty(item.productId, 0)} style={{ width: 34, height: 34, borderRadius: 10, border: 'none', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                <Trash2 size={15} color={C.red} />
+              </button>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <ProductEntity product={item.product} variant="small" />
+                <div style={{ fontSize: 12, color: C.blue, fontWeight: 800, marginTop: 4, textAlign: 'right' }}>{fmt(item.qty * item.product.sellPrice)} DA</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FAFAFA', borderRadius: 10, padding: 4, flexShrink: 0 }}>
+                <button onClick={() => updateQty(item.productId, item.qty - 1)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <Minus size={14} color={C.dark} />
+                </button>
+                <span style={{ minWidth: 24, textAlign: 'center', fontSize: 15, fontWeight: 800 }}>{item.qty}</span>
+                <button onClick={() => updateQty(item.productId, item.qty + 1)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: C.blue, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <Plus size={14} color="#fff" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ padding: '14px 16px 22px', borderTop: `1px solid ${C.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 22, fontWeight: 900, color: C.blue }}>{fmt(total)} <span style={{ fontSize: 13 }}>DA</span></span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>الإجمالي</span>
+          </div>
+          <button onClick={completeSale} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: C.green, color: '#fff', fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' }}>
+            <Check size={20} /> بيع
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ReportsDrawer({ open, onClose, products, todaySales, debts }) {
+  const [activeTab, setActiveTab] = useState('sales');
+  const safeDebts = Array.isArray(debts) ? debts : [];
+
+  useEffect(() => {
+    if (open) setActiveTab('sales');
+  }, [open]);
+
+  const salesTotal = useMemo(() => todaySales.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0), [todaySales]);
+  const pendingDebts = useMemo(() => safeDebts.filter(debt => {
+    const status = String(debt.status || '').toLowerCase();
+    return status !== 'paid' && status !== 'done' && !debt.paid && !debt.isPaid;
+  }), [safeDebts]);
+  const debtsTotal = useMemo(() => pendingDebts.reduce((sum, debt) => sum + Number(debt.amount ?? debt.total ?? debt.balance ?? 0), 0), [pendingDebts]);
+
+  if (!open) return null;
+
+  const openWhatsApp = (debt) => {
+    const phone = String(debt.phone || debt.whatsapp || debt.mobile || '').replace(/[^\d+]/g, '');
+    if (!phone) return;
+    const amount = Number(debt.amount ?? debt.total ?? debt.balance ?? 0);
+    const name = debt.customerName || debt.customer || debt.name || 'زبون';
+    const text = encodeURIComponent(`سلام ${name}، المبلغ المتبقي هو ${fmt(amount)} DA`);
+    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.48)', zIndex: 240, animation: 'fadeInBg 0.2s ease' }} />
+      <div style={{ position: 'fixed', top: '7.5vh', right: 'max(0px, calc((100vw - 390px) / 2))', width: 'min(360px, 92vw)', height: '85vh', background: '#fff', borderRadius: '24px 0 0 24px', zIndex: 241, animation: 'slideInRight 0.25s ease', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '-10px 0 30px rgba(0,0,0,0.18)' }}>
+        <div style={{ padding: '16px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={18} color={C.dark} />
+          </button>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>تفاصيل اليوم</h2>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', borderBottom: `1px solid ${C.border}` }}>
+          {[
+            { id: 'sales', label: 'المبيعات اليوم' },
+            { id: 'debts', label: 'شحال يسالوك' },
+          ].map(tab => {
+            const active = activeTab === tab.id;
+            return (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, padding: '9px 10px', borderRadius: 999, border: active ? 'none' : `1px solid ${C.border}`, background: active ? C.blue : '#fff', color: active ? '#fff' : C.dark, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>{tab.label}</button>
+            );
+          })}
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 18px' }}>
+          {activeTab === 'sales' ? (
+            <>
+              {todaySales.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>لا توجد مبيعات اليوم</div>
+              ) : todaySales.map((sale, index) => {
+                const product = products.find(p => p.id === sale.productId) || { id: sale.productId || index, name: sale.productName || 'منتج', emoji: sale.emoji || '📦', image: sale.image || '', category: sale.category || 'أخرى' };
+                return (
+                  <div key={`${sale.productId}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
+                    <ProductEntity product={product} variant="tiny" />
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: C.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</div>
+                      <div style={{ fontSize: 12, color: C.gray, marginTop: 3 }}>× {sale.qty}</div>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: C.blue }}>{fmt(sale.total)} DA</div>
+                  </div>
+                );
+              })}
+              {todaySales.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 16, fontSize: 17, fontWeight: 900 }}>
+                  <span style={{ color: C.blue }}>{fmt(salesTotal)} DA</span>
+                  <span style={{ color: C.dark }}>الإجمالي:</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ color: C.red, fontSize: 17, fontWeight: 900, padding: '10px 0 14px', textAlign: 'right' }}>إجمالي الديون: {fmt(debtsTotal)} DA</div>
+              {pendingDebts.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>لا توجد ديون حالياً</div>
+              ) : pendingDebts.map((debt, index) => {
+                const amount = Number(debt.amount ?? debt.total ?? debt.balance ?? 0);
+                const name = debt.customerName || debt.customer || debt.name || 'زبون';
+                const phone = debt.phone || debt.whatsapp || debt.mobile;
+                return (
+                  <div key={debt.id || index} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
+                    {phone && <button onClick={() => openWhatsApp(debt)} style={{ width: 38, height: 38, borderRadius: 12, border: 'none', background: '#DCFCE7', color: C.green, fontSize: 12, fontWeight: 900, cursor: 'pointer' }}>WA</button>}
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: C.dark }}>{name}</div>
+                      <div style={{ fontSize: 12, color: C.gray, marginTop: 3 }}>منذ {getDaysAgo(debt.date || debt.createdAt || debt.created_at)} أيام</div>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: C.red }}>{fmt(amount)} DA</div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function SellScreen({ products, categories, cart, setCart, onSell }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('الكل');
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [sheetQty, setSheetQty] = useState(1);
+  const [showCartSheet, setShowCartSheet] = useState(false);
 
-  const categories = ['الكل', 'مشروبات', 'أكل', 'أخرى'];
+  const categoryFilters = useMemo(() => [ALL_FILTER, ...categories], [categories]);
 
   const filtered = useMemo(() => {
     let list = products.filter(p => p.is_active);
-    if (category !== 'الكل') list = list.filter(p => p.category === category);
+    if (category !== ALL_FILTER) list = list.filter(p => p.category === category);
     if (search) list = list.filter(p => p.name.includes(search));
     return list;
   }, [products, category, search]);
@@ -621,39 +1047,29 @@ function SellScreen({ products, cart, setCart, onSell }) {
   }, 0), [cart, products]);
   const cartCount = useMemo(() => cart.reduce((s, c) => s + c.qty, 0), [cart]);
 
-  const openSheet = (p) => {
-    if (p.qty === 0) return;
-    const existing = cart.find(c => c.productId === p.id);
-    setSheetQty(existing ? existing.qty : 1);
-    setSelectedProduct(p);
-  };
-
-  const addToCart = () => {
-    if (!selectedProduct) return;
+  const addOneToCart = (product) => {
+    if (!product || product.qty === 0 || !product.is_active) return;
     setCart(prev => {
-      const existing = prev.findIndex(c => c.productId === selectedProduct.id);
+      const existing = prev.findIndex(c => c.productId === product.id);
       if (existing >= 0) {
         const updated = [...prev];
-        updated[existing] = { ...updated[existing], qty: sheetQty };
+        updated[existing] = { ...updated[existing], qty: Math.min(product.qty, updated[existing].qty + 1) };
         return updated;
       }
-      return [...prev, { productId: selectedProduct.id, qty: sheetQty }];
+      return [...prev, { productId: product.id, qty: 1 }];
     });
-    setSelectedProduct(null);
   };
 
   return (
     <div>
-      <div style={{ background: '#fff', padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ width: 40 }} />
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: C.dark }}>البيع</h1>
-        <div style={{ position: 'relative' }}>
-          <ShoppingCart size={24} color={C.dark} />
-          {cartCount > 0 && (
-            <div style={{ position: 'absolute', top: -8, right: -8, background: C.red, color: '#fff', fontSize: 10, fontWeight: 700, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{cartCount}</div>
-          )}
-        </div>
-      </div>
+      <AppHeader
+        title="البيع"
+        right={(
+          <HeaderIconButton label="السلة" badge={cartCount} onClick={() => setShowCartSheet(true)}>
+            <ShoppingCart size={24} color={C.dark} />
+          </HeaderIconButton>
+        )}
+      />
 
       <div style={{ padding: '8px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 12, padding: '10px 14px', border: `1px solid ${C.border}` }}>
@@ -663,7 +1079,7 @@ function SellScreen({ products, cart, setCart, onSell }) {
       </div>
 
       <div style={{ display: 'flex', gap: 8, padding: '8px 16px', overflowX: 'auto', direction: 'rtl' }}>
-        {categories.map(cat => (
+        {categoryFilters.map(cat => (
           <button key={cat} onClick={() => setCategory(cat)} style={{
             padding: '8px 20px', borderRadius: 24, fontSize: 13, fontWeight: 600, border: category === cat ? 'none' : `1px solid ${C.border}`,
             background: category === cat ? C.blue : '#fff', color: category === cat ? '#fff' : C.dark, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
@@ -673,38 +1089,28 @@ function SellScreen({ products, cart, setCart, onSell }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, padding: '8px 12px', paddingBottom: cart.length > 0 ? 80 : 16 }}>
         {filtered.map(p => (
-          <ProductEntity key={p.id} product={p} variant="grid" inCart={cart.find(c => c.productId === p.id)} onClick={() => openSheet(p)} />
+          <ProductEntity key={p.id} product={p} variant="grid" inCart={cart.find(c => c.productId === p.id)} onClick={() => addOneToCart(p)} />
         ))}
       </div>
 
       {cart.length > 0 && (
-        <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderTop: `1px solid ${C.border}`, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 90 }}>
+        <div onClick={() => setShowCartSheet(true)} style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderTop: `1px solid ${C.border}`, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 90, cursor: 'pointer' }}>
           <span style={{ fontSize: 13, color: C.gray }}>{cart.length} منتجات</span>
           <span style={{ fontSize: 22, fontWeight: 800, color: C.blue }}>{fmt(cartTotal)} <span style={{ fontSize: 14 }}>DA</span></span>
-          <button onClick={onSell} style={{ background: C.green, color: '#fff', border: 'none', borderRadius: 12, padding: '10px 24px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={(event) => { event.stopPropagation(); onSell(); }} style={{ background: C.green, color: '#fff', border: 'none', borderRadius: 12, padding: '10px 24px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Check size={18} /> بيع
           </button>
         </div>
       )}
 
-      {selectedProduct && (
-        <>
-          <div onClick={() => setSelectedProduct(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, animation: 'fadeInBg 0.3s ease' }} />
-          <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderRadius: '24px 24px 0 0', padding: '12px 24px 32px', zIndex: 201, animation: 'slideUp 0.3s ease' }}>
-            <div style={{ width: 40, height: 4, background: '#ddd', borderRadius: 2, margin: '0 auto 20px' }} />
-            <ProductEntity product={selectedProduct} variant="sheet" />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 24 }}>
-              <button onClick={() => setSheetQty(Math.max(1, sheetQty - 1))} style={{ width: 44, height: 44, borderRadius: '50%', background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={20} color={C.gray} /></button>
-              <span style={{ fontSize: 36, fontWeight: 800, color: C.dark, minWidth: 50, textAlign: 'center' }}>{sheetQty}</span>
-              <button onClick={() => setSheetQty(Math.min(selectedProduct.qty, sheetQty + 1))} style={{ width: 44, height: 44, borderRadius: '50%', background: C.blue, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={20} color="#fff" /></button>
-            </div>
-            <button onClick={addToCart} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.green, color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <Check size={20} /> إضافة للسلة
-            </button>
-            <button onClick={() => setSelectedProduct(null)} style={{ width: '100%', padding: '12px', marginTop: 8, background: 'transparent', color: C.gray, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>إلغاء</button>
-          </div>
-        </>
-      )}
+      <CartDetailsSheet
+        open={showCartSheet}
+        cart={cart}
+        products={products}
+        setCart={setCart}
+        onSell={onSell}
+        onClose={() => setShowCartSheet(false)}
+      />
     </div>
   );
 }
@@ -712,9 +1118,10 @@ function SellScreen({ products, cart, setCart, onSell }) {
 /* ═══════════════════════════════════════════
    SCREEN 2: INVENTORY (المخزون)
    ═══════════════════════════════════════════ */
-function InventoryScreen({ products, onAddProduct, onEditProduct }) {
+function InventoryScreen({ products, categories, onAddCategory, onRenameCategory, onDeleteCategory, onAddProduct, onEditProduct }) {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('الكل');
+  const [filter, setFilter] = useState(ALL_FILTER);
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
 
   const activeProducts = useMemo(() => products.filter(p => p.is_active), [products]);
   const stats = useMemo(() => ({
@@ -725,28 +1132,33 @@ function InventoryScreen({ products, onAddProduct, onEditProduct }) {
   }), [activeProducts]);
 
   const filtered = useMemo(() => {
-    let list = [...activeProducts];
+    let list = filter === 'المعطلة' ? products.filter(p => !p.is_active) : [...activeProducts];
     if (search) list = list.filter(p => p.name.includes(search));
     if (filter === 'منخفضة المخزون') list = list.filter(p => p.qty > 0 && p.qty <= p.minAlert);
     else if (filter === 'نفدت الكمية') list = list.filter(p => p.qty === 0);
-    else if (filter === 'معطلة') list = products.filter(p => !p.is_active);
+    else if (isCategoryFilter(filter)) list = list.filter(p => p.category === categoryFromFilter(filter));
     return list;
   }, [products, activeProducts, search, filter]);
 
-  const filters = ['الكل', 'الأكثر مبيعاً', 'منخفضة المخزون', 'نفدت الكمية', 'فئات ▾'];
+  const filters = useMemo(() => [
+    { label: ALL_FILTER, value: ALL_FILTER },
+    { label: 'الأكثر مبيعاً', value: 'الأكثر مبيعاً' },
+    { label: 'منخفضة المخزون', value: 'منخفضة المخزون' },
+    { label: 'نفدت الكمية', value: 'نفدت الكمية' },
+    { label: 'المعطلة', value: 'المعطلة' },
+    ...categories.map(category => ({ label: category, value: getCategoryFilter(category) })),
+    { label: MANAGE_CATEGORIES_LABEL, value: MANAGE_CATEGORIES_LABEL },
+  ], [categories]);
+
+  const selectedLabel = isCategoryFilter(filter) ? categoryFromFilter(filter) : filter;
 
   return (
     <div>
-      <div style={{ background: '#fff', padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Menu size={22} color={C.dark} />
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: C.dark }}>المخزون</h1>
-        <div style={{ position: 'relative' }}>
-          <Bell size={22} color={C.dark} />
-          {stats.low > 0 && (
-            <div style={{ position: 'absolute', top: -6, right: -6, background: C.red, color: '#fff', fontSize: 9, fontWeight: 700, width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{stats.low}</div>
-          )}
-        </div>
-      </div>
+      <AppHeader
+        title="المخزون"
+        left={<HeaderIconButton label="القائمة"><Menu size={22} color={C.dark} /></HeaderIconButton>}
+        right={<HeaderIconButton label="تنبيهات المخزون" badge={stats.low}><Bell size={22} color={C.dark} /></HeaderIconButton>}
+      />
 
       <div style={{ padding: '8px 16px', display: 'flex', gap: 8 }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 12, padding: '10px 14px', border: `1px solid ${C.border}` }}>
@@ -775,23 +1187,23 @@ function InventoryScreen({ products, onAddProduct, onEditProduct }) {
 
       <div style={{ display: 'flex', gap: 8, padding: '12px 16px', overflowX: 'auto', scrollbarWidth: 'none' }}>
         {filters.map(f => {
-          const isActive = filter === f;
-          const isAll = f === 'الكل';
+          const isActive = filter === f.value;
+          const isManage = f.value === MANAGE_CATEGORIES_LABEL;
           return (
-            <button key={f} onClick={() => setFilter(f)} style={{
+            <button key={f.value} onClick={() => isManage ? setShowCategorySheet(true) : setFilter(f.value)} style={{
               padding: '8px 16px', borderRadius: 24, fontSize: 13, fontWeight: 600,
-              background: isAll || isActive ? '#1A1A1A' : '#fff',
-              color: isAll || isActive ? '#fff' : C.dark,
-              border: isAll || isActive ? 'none' : `1px solid ${C.border}`,
+              background: isActive ? '#1A1A1A' : '#fff',
+              color: isActive ? '#fff' : C.dark,
+              border: isActive ? 'none' : `1px solid ${C.border}`,
               cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
               transition: 'all 0.2s ease'
-            }}>{f}</button>
+            }}>{f.label}</button>
           );
         })}
       </div>
 
       <div style={{ padding: '4px 16px 8px', display: 'flex', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 12, color: C.gray }}>كل المنتجات ({filtered.length})</span>
+        <span style={{ fontSize: 12, color: C.gray }}>{selectedLabel} ({filtered.length})</span>
         <span style={{ fontSize: 12, color: C.gray }}>ترتيب: الاسم</span>
       </div>
 
@@ -801,9 +1213,21 @@ function InventoryScreen({ products, onAddProduct, onEditProduct }) {
         ))}
       </div>
 
-      <button onClick={onAddProduct} style={{ position: 'fixed', bottom: 90, right: 'calc(50% - 175px)', width: 52, height: 52, borderRadius: '50%', background: C.dark, color: '#fff', border: 'none', fontSize: 28, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
+      <button aria-label="إضافة منتج" onClick={onAddProduct} style={{ position: 'fixed', bottom: 90, right: 'calc(50% - 175px)', width: 52, height: 52, borderRadius: '50%', background: C.dark, color: '#fff', border: 'none', fontSize: 28, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
         <Plus size={24} />
       </button>
+
+      <CategoryManagerSheet
+        open={showCategorySheet}
+        categories={categories}
+        products={products}
+        selectedFilter={filter}
+        onSelectCategory={(categoryName) => setFilter(getCategoryFilter(categoryName))}
+        onAddCategory={onAddCategory}
+        onRenameCategory={onRenameCategory}
+        onDeleteCategory={onDeleteCategory}
+        onClose={() => setShowCategorySheet(false)}
+      />
     </div>
   );
 }
@@ -811,110 +1235,407 @@ function InventoryScreen({ products, onAddProduct, onEditProduct }) {
 /* ═══════════════════════════════════════════
    SCREEN 3: PURCHASE (الشراء)
    ═══════════════════════════════════════════ */
-function PurchaseScreen({ products, onPurchase, monthTotal, recentPurchases }) {
-  const [selectedProductId, setSelectedProductId] = useState(products[0]?.id || 1);
-  const [qty, setQty] = useState(12);
-  const [price, setPrice] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
+function PurchaseScreen({ products, categories, onPurchase, monthTotal, recentPurchases, allPurchases }) {
+  const [supplier, setSupplier] = useState('');
+  const [purchaseItems, setPurchaseItems] = useState([]);
+  const [showSuccessSheet, setShowSuccessSheet] = useState(false);
+  const [lastSavedPurchase, setLastSavedPurchase] = useState(null);
+  const [expandedHistoryId, setExpandedHistoryId] = useState(null);
+  const [showFullHistory, setShowFullHistory] = useState(false);
+  const [showProductSelector, setShowProductSelector] = useState(false);
+  const [selectorCategory, setSelectorCategory] = useState(ALL_FILTER);
 
-  const selectedProduct = products.find(p => p.id === selectedProductId) || products[0];
+  const renderHistoryItem = (r, i) => {
+    // Compatibility for old single-item entries
+    const isBulk = r.items && Array.isArray(r.items);
+    const itemsCount = isBulk ? r.items.length : 1;
+    const displayItems = isBulk ? r.items : [{ productName: r.productName, emoji: r.emoji, qty: r.qty, subtotal: r.total }];
+    const expanded = expandedHistoryId === r.id;
 
-  useEffect(() => { if (selectedProduct) setPrice(String(selectedProduct.buyPrice)); }, [selectedProductId]);
-
-  const handleSave = () => {
-    if (!selectedProduct || qty <= 0) return;
-    onPurchase(selectedProductId, qty, Number(price) || selectedProduct.buyPrice);
-    setQty(12);
+    return (
+      <div key={r.id || i} style={{ background: '#fff', borderRadius: 14, padding: '14px', marginBottom: 10, boxShadow: C.shadow, border: `1px solid ${C.border}` }}>
+        <div onClick={() => setExpandedHistoryId(expanded ? null : r.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.blue }}>{fmt(r.total)} DA</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <button onClick={(e) => { e.stopPropagation(); setLastSavedPurchase(r); setShowSuccessSheet(true); }} style={{ background: '#F3F4F6', border: 'none', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <Receipt size={14} color={C.dark} />
+              </button>
+            </div>
+          </div>
+          
+          <div style={{ flex: 1, padding: '0 12px', textAlign: 'right' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{r.supplier || 'غير محدد'}</div>
+            <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>{itemsCount} منتجات</div>
+          </div>
+          
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <span style={{ fontSize: 11, color: C.gray }}>{r.date || 'اليوم'}</span>
+            {expanded ? <ChevronUp size={16} color={C.gray} /> : <ChevronDown size={16} color={C.gray} />}
+          </div>
+        </div>
+        
+        {expanded && (
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${C.border}` }}>
+            {displayItems.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
+                <span style={{ fontWeight: 700, color: C.dark }}>{fmt(item.subtotal)} DA</span>
+                <span style={{ color: C.gray }}>{item.productName} × {item.qty}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
-  return (
-    <div>
-      <div style={{ background: '#fff', padding: '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Menu size={22} color={C.dark} />
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: C.dark }}>الشراء</h1>
-          <p style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>سجّل ما اشتريته اليوم</p>
-        </div>
-        <ShoppingBag size={22} color={C.dark} />
-      </div>
+  const totalAmount = useMemo(() => {
+    return purchaseItems.reduce((sum, item) => {
+      const p = products.find(pr => pr.id === item.productId);
+      return sum + (item.qty * (p?.buyPrice || 0));
+    }, 0);
+  }, [purchaseItems, products]);
 
-      <div style={{ padding: '12px 16px' }}>
-        <div style={{ background: '#fff', borderRadius: C.radius, padding: '20px', boxShadow: C.shadow, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, color: C.dark }}>هذا الشهر:</span>
-            <span style={{ fontSize: 32, fontWeight: 800, color: C.dark }}>{fmt(monthTotal)} <span style={{ fontSize: 16, color: C.dark }}>DA</span></span>
-          </div>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Wallet size={22} color={C.dark} /></div>
-        </div>
-      </div>
+  const selectorProducts = useMemo(() => {
+    if (selectorCategory === ALL_FILTER) return products;
+    return products.filter(product => product.category === selectorCategory);
+  }, [products, selectorCategory]);
 
-      <div style={{ padding: '0 16px 12px' }}>
-        <div style={{ background: '#fff', borderRadius: C.radius, padding: '20px', boxShadow: C.shadow }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 16, textAlign: 'center' }}>إضافة شراء جديد</h3>
-          
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: C.gray, marginBottom: 6, display: 'block' }}>المنتج</label>
-            <div style={{ position: 'relative' }}>
-              <div onClick={() => setShowDropdown(!showDropdown)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, cursor: 'pointer', background: '#FAFAFA' }}>
-                <ProductEntity product={selectedProduct || { emoji: '📦', category: 'أخرى' }} variant="small" />
-                <ChevronDown size={18} color={C.gray} />
-              </div>
-              {showDropdown && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', borderRadius: 12, marginTop: 4, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', zIndex: 50, maxHeight: 200, overflowY: 'auto' }}>
-                  {products.map(p => (
-                    <div key={p.id} onClick={() => { setSelectedProductId(p.id); setShowDropdown(false); }} style={{ padding: '10px 14px', cursor: 'pointer', background: p.id === selectedProductId ? '#F0F7FF' : 'transparent' }}>
-                      <ProductEntity product={p} variant="small" />
-                    </div>
-                  ))}
+  const handleProductSelect = (product) => {
+    const existing = purchaseItems.find(item => item.productId === product.id);
+    if (existing) {
+      handleUpdateRow(existing.id, 'qty', existing.qty + 1);
+    } else {
+      setPurchaseItems([...purchaseItems, { 
+        id: Date.now() + Math.random(), 
+        productId: product.id, 
+        qty: 1 
+      }]);
+    }
+  };
+
+  const handleRemoveRow = (id) => {
+    setPurchaseItems(purchaseItems.filter(item => item.id !== id));
+  };
+
+  const handleUpdateRow = (id, field, value) => {
+    setPurchaseItems(purchaseItems.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+
+  const handleSave = () => {
+    if (purchaseItems.length === 0) return;
+    
+    const mappedItems = purchaseItems.map(item => {
+      const p = products.find(pr => pr.id === item.productId);
+      return {
+        productId: item.productId,
+        productName: p.name,
+        emoji: p.emoji,
+        qty: item.qty,
+        costPerUnit: p.buyPrice,
+        subtotal: item.qty * p.buyPrice
+      };
+    });
+
+    const record = onPurchase(supplier, mappedItems, totalAmount);
+    if (record) {
+      setLastSavedPurchase(record);
+      setShowSuccessSheet(true);
+      setPurchaseItems([]);
+      setSupplier('');
+    }
+  };
+
+  const shareWhatsApp = () => {
+    if (!lastSavedPurchase) return;
+    
+    let text = `🛒 فاتورة شراء — ${lastSavedPurchase.date}\n`;
+    text += `المورّد: ${lastSavedPurchase.supplier || 'غير محدد'}\n`;
+    text += `─────────────\n`;
+    
+    const itemsToShare = lastSavedPurchase.items && Array.isArray(lastSavedPurchase.items) 
+      ? lastSavedPurchase.items 
+      : [{ productName: lastSavedPurchase.productName, qty: lastSavedPurchase.qty, subtotal: lastSavedPurchase.total }];
+
+    itemsToShare.forEach(item => {
+      text += `${item.productName} × ${item.qty} = ${fmt(item.subtotal)} DA\n`;
+    });
+    
+    text += `─────────────\n`;
+    text += `الإجمالي: ${fmt(lastSavedPurchase.total)} DA`;
+    
+    const encoded = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  };
+
+  const receiptItems = lastSavedPurchase?.items && Array.isArray(lastSavedPurchase.items) 
+    ? lastSavedPurchase.items 
+    : lastSavedPurchase 
+      ? [{ productName: lastSavedPurchase.productName, qty: lastSavedPurchase.qty, subtotal: lastSavedPurchase.total }]
+      : [];
+
+  if (showFullHistory) {
+    return (
+      <div style={{ paddingBottom: 100, minHeight: '100vh', background: C.bg }}>
+        <AppHeader
+          title="كل المشتريات"
+          left={<HeaderIconButton label="رجوع" onClick={() => setShowFullHistory(false)}><ChevronLeft size={24} color={C.dark} /></HeaderIconButton>}
+          border
+        />
+        
+        <div style={{ padding: '16px' }}>
+          {allPurchases.length === 0 && <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>لا توجد مشتريات سابقة</div>}
+          {allPurchases.map(renderHistoryItem)}
+        </div>
+
+        {showSuccessSheet && lastSavedPurchase && (
+          <>
+            <div onClick={() => setShowSuccessSheet(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, animation: 'fadeIn 0.3s ease' }} />
+            <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 24px 32px', zIndex: 201, animation: 'slideUp 0.3s ease', boxSizing: 'border-box' }}>
+              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#F0FDF4', color: C.green, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                  <Receipt size={32} strokeWidth={2} />
                 </div>
-              )}
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: C.dark }}>إيصال شراء</h2>
+                <p style={{ fontSize: 13, color: C.gray, marginTop: 4 }}>{lastSavedPurchase.date}</p>
+              </div>
+              
+              <div style={{ background: '#F9FAFB', borderRadius: 16, padding: '16px', marginBottom: 24, border: `1px solid ${C.border}` }}>
+                {receiptItems.map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < receiptItems.length - 1 ? `1px solid ${C.border}` : 'none', fontSize: 14 }}>
+                    <span style={{ fontWeight: 700, color: C.dark }}>{fmt(item.subtotal)} DA</span>
+                    <span style={{ color: C.gray }}>{item.productName} × {item.qty}</span>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, marginTop: 8, borderTop: `1px dashed ${C.border}`, fontSize: 16, fontWeight: 800 }}>
+                  <span style={{ color: C.blue }}>{fmt(lastSavedPurchase.total)} DA</span>
+                  <span style={{ color: C.dark }}>الإجمالي</span>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button onClick={() => setShowSuccessSheet(false)} style={{ flex: 1, padding: '14px', borderRadius: 12, background: '#fff', color: C.dark, border: `1px solid ${C.border}`, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>إغلاق</button>
+              </div>
             </div>
-          </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: C.gray, marginBottom: 6, display: 'block' }}>الكمية</label>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#FAFAFA' }}>
-              <button onClick={() => setQty(Math.max(1, qty + 1))} style={{ width: 40, height: 40, borderRadius: '50%', background: C.blue, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={18} color="#fff" /></button>
-              <button onClick={() => setQty(Math.min(qty + 12, 999))} style={{ width: 40, height: 40, borderRadius: 20, background: C.blue, border: 'none', cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 700 }}>+12</button>
-              <span style={{ fontSize: 36, fontWeight: 800, color: C.dark, minWidth: 60, textAlign: 'center' }}>{qty}</span>
-              <button onClick={() => setQty(Math.max(1, qty - 1))} style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={18} color={C.gray} /></button>
-              <button style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: C.gray }}>N</button>
+  return (
+    <div style={{ paddingBottom: purchaseItems.length > 0 ? 160 : 80 }}>
+      <AppHeader
+        title="الشراء"
+        subtitle="سجّل مشترياتك"
+        left={<HeaderIconButton label="القائمة"><Menu size={22} color={C.dark} /></HeaderIconButton>}
+        right={<HeaderIconButton label="كل المشتريات" onClick={() => setShowFullHistory(true)}><ShoppingBag size={22} color={C.dark} /></HeaderIconButton>}
+      />
+
+      {/* Styled Supplier Card */}
+      <div style={{ padding: '16px' }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '16px', boxShadow: C.shadow, border: `1px solid ${C.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Truck size={18} color={C.gray} />
             </div>
+            <label style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>المورّد</label>
           </div>
+          <input 
+            type="text" 
+            value={supplier} 
+            onChange={e => setSupplier(e.target.value)}
+            placeholder="اسم المورّد (اختياري)" 
+            style={{ 
+              width: '100%', padding: '12px 14px', borderRadius: 10, 
+              border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', 
+              textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box'
+            }} 
+          />
+        </div>
+      </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: C.gray, marginBottom: 6, display: 'block' }}>السعر للوحدة</label>
-            <div style={{ padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#FAFAFA' }}>
-              <input type="number" value={price} onChange={e => setPrice(e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', fontSize: 16, fontWeight: 700, background: 'transparent', textAlign: 'right', direction: 'rtl' }} />
-            </div>
-            <p style={{ fontSize: 11, color: C.gray, marginTop: 4 }}>السعر المحفوظ: {selectedProduct?.buyPrice} DA</p>
+      {/* Product List */}
+      <div style={{ padding: '0 16px' }}>
+        {purchaseItems.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px 0', color: C.gray, fontSize: 14 }}>
+            اضغط زر "شراء جديد +" لإضافة منتج
           </div>
+        ) : (
+          purchaseItems.map((item, index) => {
+            const p = products.find(pr => pr.id === item.productId) || products[0];
+            const subtotal = item.qty * (p?.buyPrice || 0);
+            
+            return (
+              <div key={item.id} style={{ background: '#fff', borderRadius: 12, padding: '12px', marginBottom: 12, border: `1px solid ${C.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <button onClick={() => handleRemoveRow(item.id)} style={{ background: '#FEE2E2', border: 'none', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                    <Trash2 size={16} color={C.red} />
+                  </button>
+                  
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.blue }}>{fmt(subtotal)} DA</div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FAFAFA', borderRadius: 8, padding: '4px', flexShrink: 0 }}>
+                    <button onClick={() => handleUpdateRow(item.id, 'qty', Math.max(1, item.qty - 1))} style={{ width: 28, height: 28, borderRadius: 6, background: '#fff', border: `1px solid ${C.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={14} color={C.dark} /></button>
+                    <span style={{ fontSize: 14, fontWeight: 700, minWidth: 24, textAlign: 'center' }}>{item.qty}</span>
+                    <button onClick={() => handleUpdateRow(item.id, 'qty', item.qty + 1)} style={{ width: 28, height: 28, borderRadius: 6, background: C.blue, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={14} color="#fff" /></button>
+                  </div>
+                  
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, textAlign: 'right' }}>{p?.name}</div>
+                    <div style={{
+                      width: '44px', height: '44px',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      backgroundColor: p?.color || '#F3F4F6',
+                      flexShrink: 0
+                    }}>
+                      <img
+                        src={p?.image}
+                        alt={p?.name}
+                        style={{
+                          width: '100%', height: '100%',
+                          objectFit: 'contain', padding: '4px',
+                          boxSizing: 'border-box'
+                        }}
+                        onError={(e) => { e.target.style.display = 'none' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: C.gray, textAlign: 'right', marginTop: 8 }}>سعر الوحدة: {p?.buyPrice} DA</div>
+              </div>
+            );
+          })
+        )}
+        
+        <button onClick={() => setShowProductSelector(true)} style={{ width: '100%', height: 52, background: '#F9FAFB', border: `1.5px dashed #D1D5DB`, borderRadius: 12, color: C.dark, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 8 }}>
+          شراء جديد +
+        </button>
+      </div>
 
-          <button onClick={handleSave} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.blue, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Save size={18} /> حفظ الشراء
+      {/* History section */}
+      <div style={{ padding: '24px 16px 40px' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 12, textAlign: 'right' }}>آخر العمليات</h3>
+        {recentPurchases.map(renderHistoryItem)}
+      </div>
+
+      {/* Sticky Total & Save Bar - Conditional */}
+      {purchaseItems.length > 0 && (
+        <div style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', padding: '16px', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', zIndex: 100, boxSizing: 'border-box', animation: 'slideUp 0.3s ease' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: C.blue }}>{fmt(totalAmount)} <span style={{ fontSize: 14 }}>DA</span></span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.dark }}>الإجمالي</span>
+          </div>
+          <button 
+            onClick={handleSave}
+            style={{ 
+              width: '100%', height: 56, borderRadius: 14, 
+              background: C.blue, 
+              color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, 
+              cursor: 'pointer', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 
+            }}
+          >
+            <Save size={20} /> حفظ كل المشتريات
           </button>
         </div>
-      </div>
+      )}
 
-      <div style={{ padding: '4px 16px 100px' }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 12 }}>آخر المشتريات</h3>
-        {recentPurchases.map((r, i) => {
-          const rProduct = products.find(p => p.id === r.productId) || { emoji: r.emoji, category: 'أخرى', name: r.productName };
-          return (
-            <div key={r.id ? `${r.id}-${i}` : i} style={{ background: '#fff', borderRadius: 14, padding: '14px', marginBottom: 8, boxShadow: C.shadow, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <ProductEntity product={rProduct} variant="tiny" />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{r.productName}</div>
-                <div style={{ fontSize: 11, color: C.gray }}>+{r.qty} وحدة — {r.date}</div>
-              </div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: C.blue }}>{fmt(r.total)} DA</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.green, justifyContent: 'flex-end' }}><Check size={12} /> محفوظ</div>
+      {/* Product Selector Bottom Sheet */}
+      {showProductSelector && (
+        <>
+          <div onClick={() => setShowProductSelector(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, animation: 'fadeIn 0.3s ease' }} />
+          <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, height: '85vh', background: '#F9FAFB', borderRadius: '24px 24px 0 0', zIndex: 201, animation: 'slideUp 0.3s ease', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ background: '#fff', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${C.border}` }}>
+              <button onClick={() => setShowProductSelector(false)} style={{ background: '#F3F4F6', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <X size={20} color={C.dark} />
+              </button>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: C.dark }}>اختر المنتجات</h2>
+              <div style={{ width: 36 }} />
+            </div>
+            <div style={{ display: 'flex', gap: 8, padding: '12px 16px', overflowX: 'auto', background: '#fff', borderBottom: `1px solid ${C.border}`, direction: 'rtl' }}>
+              {[ALL_FILTER, ...categories].map(categoryName => {
+                const active = selectorCategory === categoryName;
+                return (
+                  <button key={categoryName} onClick={() => setSelectorCategory(categoryName)} style={{ padding: '8px 16px', borderRadius: 999, border: active ? 'none' : `1px solid ${C.border}`, background: active ? C.blue : '#fff', color: active ? '#fff' : C.dark, fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0 }}>
+                    {categoryName}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {selectorProducts.map(p => (
+                  <div key={p.id} onClick={() => handleProductSelect(p)} style={{ background: '#fff', borderRadius: 16, padding: '16px 14px', textAlign: 'center', boxShadow: C.shadow, cursor: 'pointer', border: `1px solid ${C.border}` }}>
+                    <div style={{
+                      width: '100%', height: '80px',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      backgroundColor: p.color || '#F3F4F6',
+                      marginBottom: 12,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        style={{
+                          width: '100%', height: '100%',
+                          objectFit: 'contain', padding: '4px',
+                          boxSizing: 'border-box'
+                        }}
+                        onError={(e) => { e.target.style.display = 'none' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 4, lineHeight: 1.3 }}>{p.name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: C.blue }}>{p.buyPrice} <span style={{ fontSize: 12 }}>DA</span></div>
+                  </div>
+                ))}
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        </>
+      )}
+
+      {/* Success Sheet Overlay */}
+      {showSuccessSheet && lastSavedPurchase && !showFullHistory && (
+        <>
+          <div onClick={() => setShowSuccessSheet(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, animation: 'fadeIn 0.3s ease' }} />
+          <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 24px 32px', zIndex: 201, animation: 'slideUp 0.3s ease', boxSizing: 'border-box' }}>
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#F0FDF4', color: C.green, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                <Check size={32} strokeWidth={3} />
+              </div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: C.dark }}>تم تسجيل الشراء</h2>
+              <p style={{ fontSize: 13, color: C.gray, marginTop: 4 }}>{lastSavedPurchase.date}</p>
+            </div>
+            
+            <div style={{ background: '#F9FAFB', borderRadius: 16, padding: '16px', marginBottom: 24, border: `1px solid ${C.border}` }}>
+              {receiptItems.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: idx < receiptItems.length - 1 ? `1px solid ${C.border}` : 'none', fontSize: 14 }}>
+                  <span style={{ fontWeight: 700, color: C.dark }}>{fmt(item.subtotal)} DA</span>
+                  <span style={{ color: C.gray }}>{item.productName} × {item.qty}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, marginTop: 8, borderTop: `1px dashed ${C.border}`, fontSize: 16, fontWeight: 800 }}>
+                <span style={{ color: C.blue }}>{fmt(lastSavedPurchase.total)} DA</span>
+                <span style={{ color: C.dark }}>الإجمالي</span>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setShowSuccessSheet(false)} style={{ flex: 1, padding: '14px', borderRadius: 12, background: '#fff', color: C.dark, border: `1px solid ${C.border}`, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>تخطي</button>
+              <button onClick={shareWhatsApp} style={{ flex: 1, padding: '14px', borderRadius: 12, background: C.green, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                مشاركة واتساب 📤
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -925,14 +1646,11 @@ function PurchaseScreen({ products, onPurchase, monthTotal, recentPurchases }) {
 function CloseDayScreen({ step, setStep, todaySalesTotal, todayPurchasesTotal, stockValue, onClose, onBack }) {
   return (
     <div>
-      <div style={{ background: '#fff', padding: '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><ChevronLeft size={22} color={C.dark} /></button>
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: C.dark }}>إغلاق اليوم</h1>
-          <p style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>{getArabicDate()}</p>
-        </div>
-        <div style={{ width: 22 }} />
-      </div>
+      <AppHeader
+        title="إغلاق اليوم"
+        subtitle={getArabicDate()}
+        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+      />
 
       <div style={{ padding: '20px 32px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         {[ { num: 1, label: 'المبيعات' }, { num: 2, label: 'المشتريات' }, { num: 3, label: 'الإغلاق' } ].map((s, i) => {
@@ -999,8 +1717,9 @@ function CloseDayScreen({ step, setStep, todaySalesTotal, todayPurchasesTotal, s
 /* ═══════════════════════════════════════════
    SCREEN 5: REPORTS (التقارير)
    ═══════════════════════════════════════════ */
-function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTotal, todayProfit, onShowDetails, onShowCloseDay, onExport, onShare }) {
+function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTotal, todayProfit, debts, onShowDetails, onShowCloseDay, onExport, onShare }) {
   const [period, setPeriod] = useState('اليوم');
+  const [showDrawer, setShowDrawer] = useState(false);
   const salesCount = todaySales.length;
 
   const barData = useMemo(() => {
@@ -1029,14 +1748,16 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
 
   return (
     <div>
-      <div style={{ background: '#fff', padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Menu size={22} color={C.dark} />
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: C.dark }}>التقارير</h1>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Share2 size={22} color={C.dark} onClick={onShare} style={{ cursor: 'pointer' }} />
-          <Download size={22} color={C.dark} onClick={onExport} style={{ cursor: 'pointer' }} />
-        </div>
-      </div>
+      <AppHeader
+        title="التقارير"
+        left={(
+          <>
+            <HeaderIconButton label="مشاركة" onClick={onShare}><Share2 size={21} color={C.dark} /></HeaderIconButton>
+            <HeaderIconButton label="تحميل" onClick={onExport}><Download size={21} color={C.dark} /></HeaderIconButton>
+          </>
+        )}
+        right={<HeaderIconButton label="تفاصيل اليوم" onClick={() => setShowDrawer(true)}><Menu size={22} color={C.dark} /></HeaderIconButton>}
+      />
 
       <div style={{ padding: '8px 16px' }}>
         <button onClick={onShowCloseDay} style={{ width: '100%', padding: '14px 20px', borderRadius: 14, background: 'linear-gradient(135deg, #1A1A1A, #374151)', color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.15)', transition: 'all 0.2s ease' }}>
@@ -1098,6 +1819,14 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
       <div style={{ padding: '12px 16px 100px' }}>
         <button onClick={onShowDetails} style={{ width: '100%', padding: '14px', borderRadius: 14, background: '#fff', color: C.blue, border: `1.5px solid ${C.blue}`, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>تفاصيل الأرباح حسب المنتج ←</button>
       </div>
+
+      <ReportsDrawer
+        open={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        products={products}
+        todaySales={todaySales}
+        debts={debts || []}
+      />
     </div>
   );
 }
@@ -1109,7 +1838,7 @@ function ProfitDetailsScreen({ products, todaySales, dayRecord, onBack }) {
   const [period, setPeriod] = useState('اليوم');
   const [expanded, setExpanded] = useState({ 'مشروبات': true, 'أكل': true, 'أخرى': true });
 
-  const categories = ['مشروبات', 'أكل', 'أخرى'];
+  const categories = useMemo(() => uniqueCategories([...DEFAULT_CATEGORIES, ...products.map(product => product.category)]), [products]);
   const categoryEmojis = { 'مشروبات': '🥤', 'أكل': '🍟', 'أخرى': '🧴' };
 
   const profitData = useMemo(() => {
@@ -1135,11 +1864,11 @@ function ProfitDetailsScreen({ products, todaySales, dayRecord, onBack }) {
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ background: '#fff', padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><ChevronLeft size={22} color={C.dark} /></button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: C.dark }}>تفاصيل الأرباح</h1>
-        <ShoppingBag size={22} color={C.dark} />
-      </div>
+      <AppHeader
+        title="تفاصيل الأرباح"
+        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+        right={<HeaderIconButton label="الأرباح"><ShoppingBag size={22} color={C.dark} /></HeaderIconButton>}
+      />
 
       <div style={{ margin: '8px 16px', padding: '24px 20px', background: `linear-gradient(135deg, ${C.blue}, #1D4ED8)`, borderRadius: C.radius, textAlign: 'center', color: '#fff' }}>
         <p style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>إجمالي الربح الصافي</p>
@@ -1193,11 +1922,13 @@ function ProfitDetailsScreen({ products, todaySales, dayRecord, onBack }) {
 /* ═══════════════════════════════════════════
    SCREEN 6: ADD/EDIT PRODUCT
    ═══════════════════════════════════════════ */
-function ProductFormScreen({ product, onSave, onDelete, onRestore, onToggle, onBack }) {
+function ProductFormScreen({ product, categories, onSave, onDelete, onRestore, onToggle, onBack }) {
   const isEdit = !!product;
+  const fileInputRef = useRef(null);
   const [name, setName] = useState(product?.name || '');
   const [category, setCategory] = useState(product?.category || '');
   const [emoji, setEmoji] = useState(product?.emoji || '📦');
+  const [image, setImage] = useState(product?.image || '');
   const [buyPrice, setBuyPrice] = useState(String(product?.buyPrice || '0'));
   const [sellPrice, setSellPrice] = useState(String(product?.sellPrice || '0'));
   const [qty, setQty] = useState(product?.qty || 0);
@@ -1206,20 +1937,30 @@ function ProductFormScreen({ product, onSave, onDelete, onRestore, onToggle, onB
 
   const profit = (Number(sellPrice) || 0) - (Number(buyPrice) || 0);
   const isInactive = isEdit && !product.is_active;
-  const productForPreview = { ...product, name, emoji, category, image: product?.image };
+  const productForPreview = { ...product, id: product?.id || 0, name: name || 'منتج جديد', emoji, category: category || 'أخرى', image };
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setImage(String(reader.result || ''));
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  };
 
   const handleSave = () => {
     if (!name || !category) return;
-    onSave({ name, category, emoji, buyPrice: Number(buyPrice) || 0, sellPrice: Number(sellPrice) || 0, qty, minAlert, image: product?.image || '' });
+    onSave({ name, category, emoji, buyPrice: Number(buyPrice) || 0, sellPrice: Number(sellPrice) || 0, qty: Number(qty) || 0, minAlert: Number(minAlert) || 0, image });
   };
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
-      <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${C.border}` }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: C.dark }}><ChevronLeft size={20} /></button>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: C.dark }}>{isEdit ? 'تعديل المنتج' : 'إضافة منتج'}</h1>
-        <button onClick={handleSave} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, color: C.dark }}>حفظ</button>
-      </div>
+      <AppHeader
+        title={isEdit ? 'تعديل المنتج' : 'إضافة منتج'}
+        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+        right={<button onClick={handleSave} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 800, color: C.dark }}>حفظ</button>}
+        border
+      />
 
       <div style={{ padding: '16px 20px', overflowY: 'auto' }}>
         {isInactive && (
@@ -1229,16 +1970,23 @@ function ProductFormScreen({ product, onSave, onDelete, onRestore, onToggle, onB
           </div>
         )}
 
-        {/* Image upload area */}
-        <div style={{ background: '#F9FAFB', borderRadius: C.radius, padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 24, border: `1px dashed ${C.border}`, position: 'relative', alignSelf: 'flex-start', width: 'fit-content', minWidth: 140 }}>
-          {isEdit && productForPreview ? <ProductEntity product={productForPreview} variant="form" /> : (
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+        <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: '#F9FAFB', borderRadius: C.radius, padding: '22px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', border: `1px dashed ${C.border}`, position: 'relative', minWidth: 160, cursor: 'pointer' }}>
+          {image ? (
+            <ProductEntity product={productForPreview} variant="form" />
+          ) : (
             <>
-              <Plus size={32} color={C.gray} strokeWidth={1.5} />
+              <ImagePlus size={34} color={C.gray} strokeWidth={1.7} />
               <div style={{ fontSize: 13, color: C.gray, marginTop: 8 }}>إضافة صورة</div>
             </>
           )}
-          <div style={{ position: 'absolute', bottom: -8, left: -8, width: 32, height: 32, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>✏️</div>
-        </div>
+          <span style={{ position: 'absolute', bottom: -8, left: -8, width: 32, height: 32, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Pencil size={15} color={C.dark} />
+          </span>
+        </button>
+        {image && (
+          <button type="button" onClick={() => setImage('')} style={{ display: 'block', margin: '-12px auto 20px', border: 'none', background: 'transparent', color: C.red, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>إزالة الصورة</button>
+        )}
 
         {/* اسم المنتج */}
         <div style={{ marginBottom: 16 }}>
@@ -1255,7 +2003,7 @@ function ProductFormScreen({ product, onSave, onDelete, onRestore, onToggle, onB
           </div>
           {showCategoryDropdown && (
             <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', borderRadius: 12, marginTop: 4, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', zIndex: 50 }}>
-              {['مشروبات', 'أكل', 'أخرى'].map(c => (
+              {categories.map(c => (
                 <div key={c} onClick={() => { setCategory(c); setShowCategoryDropdown(false); }} style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, background: category === c ? '#F0F7FF' : 'transparent' }}>{c}</div>
               ))}
             </div>
@@ -1271,32 +2019,38 @@ function ProductFormScreen({ product, onSave, onDelete, onRestore, onToggle, onB
           </div>
         </div>
 
-        {/* سعر الشراء + إدارة المخزون row */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 4 }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>سعر الشراء (ر.س)</label>
-            <input type="number" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>إدارة المخزون</label>
-            <div style={{ fontSize: 15, fontWeight: 600, color: '#111827', textAlign: 'right', marginBottom: 4 }}>الكمية المتوفرة</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '6px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#FAFAFA' }}>
-              <button onClick={() => setQty(Math.max(0, qty - 1))} style={{ width: 32, height: 32, borderRadius: 8, background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={14} /></button>
-              <span style={{ fontSize: 24, fontWeight: 800, minWidth: 40, textAlign: 'center' }}>{qty}</span>
-              <button onClick={() => setQty(qty + 1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={14} /></button>
+        {/* Pricing and Inventory Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 8 }}>
+          {/* Row 1: سعر الشراء & إدارة الكمية المتوفرة */}
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 12 }}>
+            {/* Right field in RTL: سعر الشراء (ر.س) */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>سعر الشراء (ر.س)</label>
+              <input type="number" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} style={{ width: '100%', height: 48, padding: '0 12px', borderRadius: 12, border: '2px solid #D1D5DB', fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
+            </div>
+            {/* Left field in RTL: إدارة الكمية المتوفرة */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>إدارة الكمية المتوفرة</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, padding: '0 6px', borderRadius: 12, border: '2px solid #D1D5DB', background: '#FAFAFA', boxSizing: 'border-box' }}>
+                <button onClick={() => setQty(Math.max(0, qty - 1))} style={{ width: 32, height: 32, borderRadius: 8, background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={14} /></button>
+                <span style={{ fontSize: 24, fontWeight: 800, minWidth: 40, textAlign: 'center' }}>{qty}</span>
+                <button onClick={() => setQty(qty + 1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={14} /></button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* سعر البيع + تنبيه نقص row */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>سعر البيع (ر.س)</label>
-            <input type="number" value={sellPrice} onChange={e => setSellPrice(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>تنبيه نقص (أقل من)</label>
-            <input type="number" value={minAlert} onChange={e => setMinAlert(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
+          {/* Row 2: سعر البيع & تنبيه نقص (أقل من) */}
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 12 }}>
+            {/* Right field in RTL: سعر البيع (ر.س) */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>سعر البيع (ر.س)</label>
+              <input type="number" value={sellPrice} onChange={e => setSellPrice(e.target.value)} style={{ width: '100%', height: 48, padding: '0 12px', borderRadius: 12, border: '2px solid #D1D5DB', fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
+            </div>
+            {/* Left field in RTL: تنبيه نقص (أقل من) */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>تنبيه نقص (أقل من)</label>
+              <input type="number" value={minAlert} onChange={e => setMinAlert(e.target.value)} style={{ width: '100%', height: 48, padding: '0 12px', borderRadius: 12, border: '2px solid #D1D5DB', fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
+            </div>
           </div>
         </div>
 
