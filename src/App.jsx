@@ -399,28 +399,53 @@ export default function App() {
       const p = products.find(pr => pr.id === item.productId);
       return { productId: item.productId, qty: item.qty, total: item.qty * p.sellPrice };
     });
+    // Recipe products: deduct ingredients instead of product stock
+    const ingredientDeductions = {};
     const updatedProducts = products.map(p => {
       const cartItem = cart.find(c => c.productId === p.id);
-      if (cartItem) return { ...p, qty: p.qty - cartItem.qty };
-      return p;
+      if (!cartItem) return p;
+      const recipe = productRecipes.filter(r => r.product_id === p.id);
+      if (p.has_recipe && recipe.length > 0) {
+        recipe.forEach(r => {
+          ingredientDeductions[r.ingredient_id] = (ingredientDeductions[r.ingredient_id] || 0) + r.quantity_used * cartItem.qty;
+        });
+        return p;
+      }
+      return { ...p, qty: p.qty - cartItem.qty };
     });
+    if (Object.keys(ingredientDeductions).length > 0) {
+      setIngredients(prev => prev.map(ing => ingredientDeductions[ing.id]
+        ? { ...ing, sales_deducted: (Number(ing.sales_deducted) || 0) + ingredientDeductions[ing.id] }
+        : ing));
+    }
     setProducts(updatedProducts);
     setTodaySales(prev => [...prev, ...salesRecords]);
+    const d = new Date();
+    setLastReceipt({
+      number: `R-${d.getTime().toString().slice(-8)}`,
+      dateText: getArabicDate(),
+      timeText: d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+      items: cart.map(item => {
+        const p = products.find(pr => pr.id === item.productId);
+        return { name: p.name, qty: item.qty, price: p.sellPrice, total: item.qty * p.sellPrice };
+      }),
+      total: salesRecords.reduce((s, r) => s + r.total, 0),
+    });
     setCart([]);
     showSuccess('تمت عملية البيع بنجاح ✓');
-  }, [cart, products]);
+  }, [cart, products, productRecipes, setIngredients]);
 
   // Purchase handler
   const handlePurchase = useCallback((supplier, items, totalAmount) => {
     if (!items || items.length === 0) return null;
     
-    // Update product quantities for all purchased items
-    setProducts(prev => prev.map(pr => {
-      const purchasedItem = items.find(i => i.productId === pr.id);
+    // Add purchased quantities to each ingredient's starting stock
+    setIngredients(prev => prev.map(ing => {
+      const purchasedItem = items.find(i => i.productId === ing.id);
       if (purchasedItem) {
-        return { ...pr, qty: pr.qty + purchasedItem.qty };
+        return { ...ing, starting_stock: (Number(ing.starting_stock) || 0) + purchasedItem.qty };
       }
-      return pr;
+      return ing;
     }));
     
     const d = new Date();
