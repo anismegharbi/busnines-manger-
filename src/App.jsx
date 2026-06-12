@@ -175,7 +175,7 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
         onClick={onClick}
         style={{
           background: '#fff', borderRadius: C.radius,
-          padding: '12px 8px 8px', textAlign: 'center',
+          padding: '16px 12px 12px', textAlign: 'center',
           boxShadow: C.shadow, position: 'relative',
           cursor: outOfStock ? 'not-allowed' : 'pointer',
           opacity: outOfStock || !product.is_active ? 0.5 : 1,
@@ -190,9 +190,9 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
           <div style={{ position: 'absolute', top: 6, right: 6, background: C.green, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6, zIndex: 2 }}>×{inCart.qty}</div>
         )}
         <ImageComponent size="grid" />
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 4, lineHeight: 1.3 }}>{product.name}</div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: C.blue }}>{product.sellPrice} <span style={{ fontSize: 12 }}>DA</span></div>
-        <div style={{ fontSize: 11, color: C.gray, marginTop: 4, textAlign: 'left', direction: 'ltr' }}>× {product.qty}</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: C.dark, marginBottom: 6, lineHeight: 1.3 }}>{product.name}</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: C.blue }}>{product.sellPrice} <span style={{ fontSize: 13 }}>DA</span></div>
+        <div style={{ fontSize: 13, color: C.gray, marginTop: 6, textAlign: 'left', direction: 'ltr' }}>× {product.qty}</div>
       </div>
     );
   }
@@ -1094,7 +1094,7 @@ function SellScreen({ products, categories, cart, setCart, onSell }) {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, padding: '8px 12px', paddingBottom: cart.length > 0 ? 80 : 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, padding: '8px 12px', paddingBottom: cart.length > 0 ? 80 : 16 }}>
         {filtered.map(p => (
           <ProductEntity key={p.id} product={p} variant="grid" inCart={cart.find(c => c.productId === p.id)} onClick={() => addOneToCart(p)} />
         ))}
