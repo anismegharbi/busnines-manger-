@@ -723,6 +723,7 @@ function BottomNav({ activeTab, setActiveTab, lowStockCount }) {
     { icon: Package, label: 'المخزون', badge: lowStockCount },
     { icon: ShoppingBag, label: 'الشراء' },
     { icon: BarChart3, label: 'التقارير' },
+    { icon: LayoutGrid, label: 'المزيد' },
   ];
 
   return (
