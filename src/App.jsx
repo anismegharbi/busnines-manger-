@@ -316,6 +316,12 @@ export default function App() {
   const [todaySales, setTodaySales] = useLocalStorage('pos_todaySales', []);
   const [todayPurchases, setTodayPurchases] = useLocalStorage('pos_todayPurchases', []);
   const [debts] = useLocalStorage('pos_debts', []);
+  const [ingredients, setIngredients] = useLocalStorage('pos_ingredients', []);
+  const [stockSessions, setStockSessions] = useLocalStorage('pos_stock_sessions', []);
+  const [stockEntries, setStockEntries] = useLocalStorage('pos_stock_entries', []);
+  const [ownerTookLog, setOwnerTookLog] = useLocalStorage('pos_owner_took_log', []);
+  const [productRecipes, setProductRecipes] = useLocalStorage('pos_product_recipes', []);
+  const [settings] = useLocalStorage('pos_settings', { shopName: 'متجري' });
   const [allPurchases, setAllPurchases] = useLocalStorage('pos_allPurchases', [
     { id: 100, productId: 1, productName: 'عصير برتقال', emoji: '🥤', qty: 24, unitPrice: 18, total: 432, date: 'أمس' },
     { id: 101, productId: 2, productName: 'ماء 0.5L', emoji: '💧', qty: 48, unitPrice: 5, total: 240, date: 'الاثنين' },
@@ -337,6 +343,10 @@ export default function App() {
   const [reportView, setReportView] = useState('overview');
   const [successMsg, setSuccessMsg] = useState('');
   const [showCloseDay, setShowCloseDay] = useState(false);
+  const [detailProductId, setDetailProductId] = useState(null);
+  const [showProductsList, setShowProductsList] = useState(false);
+  const [morePage, setMorePage] = useState(null);
+  const [lastReceipt, setLastReceipt] = useState(null);
 
   // Initialize opening qty if empty
   useEffect(() => {
