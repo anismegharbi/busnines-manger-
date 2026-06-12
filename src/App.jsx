@@ -597,6 +597,35 @@ export default function App() {
         onBack={() => { setShowProductForm(false); setEditingProduct(null); }}
       />;
     }
+    const detailProduct = detailProductId ? products.find(p => p.id === detailProductId) : null;
+    if (detailProduct) {
+      return <ProductDetailScreen
+        product={detailProduct}
+        products={products}
+        setProducts={setProducts}
+        ingredients={ingredients}
+        productRecipes={productRecipes}
+        setProductRecipes={setProductRecipes}
+        todaySales={todaySales}
+        showSuccess={showSuccess}
+        onBack={() => setDetailProductId(null)}
+      />;
+    }
+    if (showProductsList) {
+      return <InventoryScreen
+        products={products}
+        categories={categories}
+        onAddCategory={handleAddCategory}
+        onRenameCategory={handleRenameCategory}
+        onDeleteCategory={handleDeleteCategory}
+        onAddProduct={() => { setEditingProduct(null); setShowProductForm(true); }}
+        onEditProduct={(p) => setDetailProductId(p.id)}
+        onBack={() => setShowProductsList(false)}
+      />;
+    }
+    if (morePage) {
+      return <PlaceholderScreen title={morePage} onBack={() => setMorePage(null)} />;
+    }
     if (reportView === 'details') {
       return <ProfitDetailsScreen
         products={products}
@@ -618,18 +647,22 @@ export default function App() {
     }
     switch(activeTab) {
       case 0: return <SellScreen products={products} categories={categories} cart={cart} setCart={setCart} onSell={handleSell} />;
-      case 1: return <InventoryScreen
-        products={products}
-        categories={categories}
-        onAddCategory={handleAddCategory}
-        onRenameCategory={handleRenameCategory}
-        onDeleteCategory={handleDeleteCategory}
-        onAddProduct={() => { setEditingProduct(null); setShowProductForm(true); }}
-        onEditProduct={(p) => { setEditingProduct(p); setShowProductForm(true); }}
+      case 1: return <StockScreen
+        ingredients={ingredients}
+        setIngredients={setIngredients}
+        stockSessions={stockSessions}
+        setStockSessions={setStockSessions}
+        stockEntries={stockEntries}
+        setStockEntries={setStockEntries}
+        ownerTookLog={ownerTookLog}
+        setOwnerTookLog={setOwnerTookLog}
+        setProductRecipes={setProductRecipes}
+        showSuccess={showSuccess}
+        onOpenProducts={() => setShowProductsList(true)}
       />;
       case 2: return <PurchaseScreen
-        products={products.filter(p => p.is_active)}
-        categories={categories}
+        products={ingredients.map(ing => ({ id: ing.id, name: ing.name, buyPrice: Number(ing.cost_per_unit) || 0, emoji: '🧺', unit: ing.unit }))}
+        categories={[]}
         onPurchase={handlePurchase}
         monthTotal={monthPurchasesTotal}
         recentPurchases={allPurchases.slice(0, 3)}
@@ -646,6 +679,11 @@ export default function App() {
         onShowCloseDay={() => setShowCloseDay(true)}
         onExport={handleExportData}
         onShare={handleWhatsAppShare}
+        onOpenProduct={(p) => setDetailProductId(p.id)}
+      />;
+      case 4: return <MoreScreen
+        onOpenReports={() => setActiveTab(3)}
+        onOpenPage={(title) => setMorePage(title)}
       />;
       default: return null;
     }
@@ -662,8 +700,15 @@ export default function App() {
         }}>{successMsg}</div>
       )}
       {renderScreen()}
-      {!showProductForm && reportView !== 'details' && !showCloseDay && (
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} lowStockCount={lowStockCount} />
+      {lastReceipt && (
+        <ReceiptModal
+          receipt={lastReceipt}
+          shopName={settings?.shopName || 'متجري'}
+          onClose={() => setLastReceipt(null)}
+        />
+      )}
+      {!showProductForm && reportView !== 'details' && !showCloseDay && !detailProductId && (
+        <BottomNav activeTab={activeTab} setActiveTab={(i) => { setMorePage(null); setShowProductsList(false); setActiveTab(i); }} lowStockCount={lowStockCount} />
       )}
     </div>
   );
