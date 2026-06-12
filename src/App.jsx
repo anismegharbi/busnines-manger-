@@ -6,7 +6,7 @@ import {
   Save, Trash2, Power, Filter, RotateCcw, Download, Share2, User,
   Truck, Receipt, Pencil, ImagePlus,
   LayoutGrid, Printer, Settings, HelpCircle, BookOpen, Users,
-  CreditCard, Hand, ClipboardCheck
+  CreditCard, Hand, ClipboardCheck, MessageCircle
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════
