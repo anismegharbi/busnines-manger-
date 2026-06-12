@@ -4,7 +4,9 @@ import {
   Search, Menu, Bell, ChevronLeft, ChevronDown, ChevronUp,
   Plus, Minus, Check, X, Lock, TrendingUp, Wallet,
   Save, Trash2, Power, Filter, RotateCcw, Download, Share2, User,
-  Truck, Receipt, Pencil, ImagePlus
+  Truck, Receipt, Pencil, ImagePlus,
+  LayoutGrid, Printer, Settings, HelpCircle, BookOpen, Users,
+  CreditCard, Hand, ClipboardCheck
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════
@@ -57,6 +59,11 @@ const categoryColors = {
 };
 
 const fmt = (n) => Number(n).toLocaleString('en-US');
+
+const UNITS = ['غ', 'مل', 'قطعة'];
+const VARIANCE_REASONS = ['هدر', 'أشك في سرقة', 'أنا أخذته', 'خطأ في العد'];
+const getExpectedQty = (ing) =>
+  (Number(ing.starting_stock) || 0) - (Number(ing.sales_deducted) || 0) - (Number(ing.taken_deducted) || 0);
 
 /* ═══════════════════════════════════════════
    PRODUCT IMAGE MAP
