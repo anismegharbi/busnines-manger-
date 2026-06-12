@@ -4,7 +4,9 @@ import {
   Search, Menu, Bell, ChevronLeft, ChevronDown, ChevronUp,
   Plus, Minus, Check, X, Lock, TrendingUp, Wallet,
   Save, Trash2, Power, Filter, RotateCcw, Download, Share2, User,
-  Truck, Receipt, Pencil, ImagePlus
+  Truck, Receipt, Pencil, ImagePlus,
+  LayoutGrid, Printer, Settings, HelpCircle, BookOpen, Users,
+  CreditCard, Hand, ClipboardCheck, MessageCircle
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════
@@ -57,6 +59,11 @@ const categoryColors = {
 };
 
 const fmt = (n) => Number(n).toLocaleString('en-US');
+
+const UNITS = ['غ', 'مل', 'قطعة'];
+const VARIANCE_REASONS = ['هدر', 'أشك في سرقة', 'أنا أخذته', 'خطأ في العد'];
+const getExpectedQty = (ing) =>
+  (Number(ing.starting_stock) || 0) - (Number(ing.sales_deducted) || 0) - (Number(ing.taken_deducted) || 0);
 
 /* ═══════════════════════════════════════════
    PRODUCT IMAGE MAP
@@ -168,7 +175,7 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
         onClick={onClick}
         style={{
           background: '#fff', borderRadius: C.radius,
-          padding: '12px 8px 8px', textAlign: 'center',
+          padding: '16px 12px 12px', textAlign: 'center',
           boxShadow: C.shadow, position: 'relative',
           cursor: outOfStock ? 'not-allowed' : 'pointer',
           opacity: outOfStock || !product.is_active ? 0.5 : 1,
@@ -183,9 +190,9 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
           <div style={{ position: 'absolute', top: 6, right: 6, background: C.green, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6, zIndex: 2 }}>×{inCart.qty}</div>
         )}
         <ImageComponent size="grid" />
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 4, lineHeight: 1.3 }}>{product.name}</div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: C.blue }}>{product.sellPrice} <span style={{ fontSize: 12 }}>DA</span></div>
-        <div style={{ fontSize: 11, color: C.gray, marginTop: 4, textAlign: 'left', direction: 'ltr' }}>× {product.qty}</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: C.dark, marginBottom: 6, lineHeight: 1.3 }}>{product.name}</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: C.blue }}>{product.sellPrice} <span style={{ fontSize: 13 }}>DA</span></div>
+        <div style={{ fontSize: 13, color: C.gray, marginTop: 6, textAlign: 'left', direction: 'ltr' }}>× {product.qty}</div>
       </div>
     );
   }
@@ -309,6 +316,12 @@ export default function App() {
   const [todaySales, setTodaySales] = useLocalStorage('pos_todaySales', []);
   const [todayPurchases, setTodayPurchases] = useLocalStorage('pos_todayPurchases', []);
   const [debts] = useLocalStorage('pos_debts', []);
+  const [ingredients, setIngredients] = useLocalStorage('pos_ingredients', []);
+  const [stockSessions, setStockSessions] = useLocalStorage('pos_stock_sessions', []);
+  const [stockEntries, setStockEntries] = useLocalStorage('pos_stock_entries', []);
+  const [ownerTookLog, setOwnerTookLog] = useLocalStorage('pos_owner_took_log', []);
+  const [productRecipes, setProductRecipes] = useLocalStorage('pos_product_recipes', []);
+  const [settings] = useLocalStorage('pos_settings', { shopName: 'متجري' });
   const [allPurchases, setAllPurchases] = useLocalStorage('pos_allPurchases', [
     { id: 100, productId: 1, productName: 'عصير برتقال', emoji: '🥤', qty: 24, unitPrice: 18, total: 432, date: 'أمس' },
     { id: 101, productId: 2, productName: 'ماء 0.5L', emoji: '💧', qty: 48, unitPrice: 5, total: 240, date: 'الاثنين' },
@@ -330,6 +343,10 @@ export default function App() {
   const [reportView, setReportView] = useState('overview');
   const [successMsg, setSuccessMsg] = useState('');
   const [showCloseDay, setShowCloseDay] = useState(false);
+  const [detailProductId, setDetailProductId] = useState(null);
+  const [showProductsList, setShowProductsList] = useState(false);
+  const [morePage, setMorePage] = useState(null);
+  const [lastReceipt, setLastReceipt] = useState(null);
 
   // Initialize opening qty if empty
   useEffect(() => {
@@ -382,28 +399,53 @@ export default function App() {
       const p = products.find(pr => pr.id === item.productId);
       return { productId: item.productId, qty: item.qty, total: item.qty * p.sellPrice };
     });
+    // Recipe products: deduct ingredients instead of product stock
+    const ingredientDeductions = {};
     const updatedProducts = products.map(p => {
       const cartItem = cart.find(c => c.productId === p.id);
-      if (cartItem) return { ...p, qty: p.qty - cartItem.qty };
-      return p;
+      if (!cartItem) return p;
+      const recipe = productRecipes.filter(r => r.product_id === p.id);
+      if (p.has_recipe && recipe.length > 0) {
+        recipe.forEach(r => {
+          ingredientDeductions[r.ingredient_id] = (ingredientDeductions[r.ingredient_id] || 0) + r.quantity_used * cartItem.qty;
+        });
+        return p;
+      }
+      return { ...p, qty: p.qty - cartItem.qty };
     });
+    if (Object.keys(ingredientDeductions).length > 0) {
+      setIngredients(prev => prev.map(ing => ingredientDeductions[ing.id]
+        ? { ...ing, sales_deducted: (Number(ing.sales_deducted) || 0) + ingredientDeductions[ing.id] }
+        : ing));
+    }
     setProducts(updatedProducts);
     setTodaySales(prev => [...prev, ...salesRecords]);
+    const d = new Date();
+    setLastReceipt({
+      number: `R-${d.getTime().toString().slice(-8)}`,
+      dateText: getArabicDate(),
+      timeText: d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+      items: cart.map(item => {
+        const p = products.find(pr => pr.id === item.productId);
+        return { name: p.name, qty: item.qty, price: p.sellPrice, total: item.qty * p.sellPrice };
+      }),
+      total: salesRecords.reduce((s, r) => s + r.total, 0),
+    });
     setCart([]);
     showSuccess('تمت عملية البيع بنجاح ✓');
-  }, [cart, products]);
+  }, [cart, products, productRecipes, setIngredients]);
 
   // Purchase handler
   const handlePurchase = useCallback((supplier, items, totalAmount) => {
     if (!items || items.length === 0) return null;
     
-    // Update product quantities for all purchased items
-    setProducts(prev => prev.map(pr => {
-      const purchasedItem = items.find(i => i.productId === pr.id);
+    // Add purchased quantities to each ingredient's starting stock
+    setIngredients(prev => prev.map(ing => {
+      const purchasedItem = items.find(i => i.productId === ing.id);
       if (purchasedItem) {
-        return { ...pr, qty: pr.qty + purchasedItem.qty };
+        return { ...ing, starting_stock: (Number(ing.starting_stock) || 0) + purchasedItem.qty };
       }
-      return pr;
+      return ing;
     }));
     
     const d = new Date();
@@ -555,6 +597,35 @@ export default function App() {
         onBack={() => { setShowProductForm(false); setEditingProduct(null); }}
       />;
     }
+    const detailProduct = detailProductId ? products.find(p => p.id === detailProductId) : null;
+    if (detailProduct) {
+      return <ProductDetailScreen
+        product={detailProduct}
+        products={products}
+        setProducts={setProducts}
+        ingredients={ingredients}
+        productRecipes={productRecipes}
+        setProductRecipes={setProductRecipes}
+        todaySales={todaySales}
+        showSuccess={showSuccess}
+        onBack={() => setDetailProductId(null)}
+      />;
+    }
+    if (showProductsList) {
+      return <InventoryScreen
+        products={products}
+        categories={categories}
+        onAddCategory={handleAddCategory}
+        onRenameCategory={handleRenameCategory}
+        onDeleteCategory={handleDeleteCategory}
+        onAddProduct={() => { setEditingProduct(null); setShowProductForm(true); }}
+        onEditProduct={(p) => setDetailProductId(p.id)}
+        onBack={() => setShowProductsList(false)}
+      />;
+    }
+    if (morePage) {
+      return <PlaceholderScreen title={morePage} onBack={() => setMorePage(null)} />;
+    }
     if (reportView === 'details') {
       return <ProfitDetailsScreen
         products={products}
@@ -576,18 +647,22 @@ export default function App() {
     }
     switch(activeTab) {
       case 0: return <SellScreen products={products} categories={categories} cart={cart} setCart={setCart} onSell={handleSell} />;
-      case 1: return <InventoryScreen
-        products={products}
-        categories={categories}
-        onAddCategory={handleAddCategory}
-        onRenameCategory={handleRenameCategory}
-        onDeleteCategory={handleDeleteCategory}
-        onAddProduct={() => { setEditingProduct(null); setShowProductForm(true); }}
-        onEditProduct={(p) => { setEditingProduct(p); setShowProductForm(true); }}
+      case 1: return <StockScreen
+        ingredients={ingredients}
+        setIngredients={setIngredients}
+        stockSessions={stockSessions}
+        setStockSessions={setStockSessions}
+        stockEntries={stockEntries}
+        setStockEntries={setStockEntries}
+        ownerTookLog={ownerTookLog}
+        setOwnerTookLog={setOwnerTookLog}
+        setProductRecipes={setProductRecipes}
+        showSuccess={showSuccess}
+        onOpenProducts={() => setShowProductsList(true)}
       />;
       case 2: return <PurchaseScreen
-        products={products.filter(p => p.is_active)}
-        categories={categories}
+        products={ingredients.map(ing => ({ id: ing.id, name: ing.name, buyPrice: Number(ing.cost_per_unit) || 0, emoji: '🧺', unit: ing.unit }))}
+        categories={[]}
         onPurchase={handlePurchase}
         monthTotal={monthPurchasesTotal}
         recentPurchases={allPurchases.slice(0, 3)}
@@ -604,6 +679,11 @@ export default function App() {
         onShowCloseDay={() => setShowCloseDay(true)}
         onExport={handleExportData}
         onShare={handleWhatsAppShare}
+        onOpenProduct={(p) => setDetailProductId(p.id)}
+      />;
+      case 4: return <MoreScreen
+        onOpenReports={() => setActiveTab(3)}
+        onOpenPage={(title) => setMorePage(title)}
       />;
       default: return null;
     }
@@ -620,8 +700,15 @@ export default function App() {
         }}>{successMsg}</div>
       )}
       {renderScreen()}
-      {!showProductForm && reportView !== 'details' && !showCloseDay && (
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} lowStockCount={lowStockCount} />
+      {lastReceipt && (
+        <ReceiptModal
+          receipt={lastReceipt}
+          shopName={settings?.shopName || 'متجري'}
+          onClose={() => setLastReceipt(null)}
+        />
+      )}
+      {!showProductForm && reportView !== 'details' && !showCloseDay && !detailProductId && (
+        <BottomNav activeTab={activeTab} setActiveTab={(i) => { setMorePage(null); setShowProductsList(false); setActiveTab(i); }} lowStockCount={lowStockCount} />
       )}
     </div>
   );
@@ -636,6 +723,7 @@ function BottomNav({ activeTab, setActiveTab, lowStockCount }) {
     { icon: Package, label: 'المخزون', badge: lowStockCount },
     { icon: ShoppingBag, label: 'الشراء' },
     { icon: BarChart3, label: 'التقارير' },
+    { icon: LayoutGrid, label: 'المزيد' },
   ];
 
   return (
@@ -1087,7 +1175,7 @@ function SellScreen({ products, categories, cart, setCart, onSell }) {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, padding: '8px 12px', paddingBottom: cart.length > 0 ? 80 : 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, padding: '8px 12px', paddingBottom: cart.length > 0 ? 80 : 16 }}>
         {filtered.map(p => (
           <ProductEntity key={p.id} product={p} variant="grid" inCart={cart.find(c => c.productId === p.id)} onClick={() => addOneToCart(p)} />
         ))}
@@ -2074,6 +2162,633 @@ function ProductFormScreen({ product, categories, onSave, onDelete, onRestore, o
         ) : (
           <button onClick={handleSave} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.blue, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={18} /> حفظ المنتج</button>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SHARED MODAL CARD
+   ═══════════════════════════════════════════ */
+function ModalCard({ title, onClose, children, locked = false }) {
+  return (
+    <>
+      <div onClick={locked ? undefined : onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, animation: 'fadeIn 0.2s ease' }} />
+      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'min(340px, 90vw)', maxHeight: '82vh', overflowY: 'auto', background: '#fff', borderRadius: 20, padding: 20, zIndex: 301, boxSizing: 'border-box', direction: 'rtl', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 800, color: C.dark }}>{title}</h2>
+          {!locked && (
+            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <X size={16} color={C.dark} />
+            </button>
+          )}
+        </div>
+        {children}
+      </div>
+    </>
+  );
+}
+
+const modalInputStyle = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' };
+const modalLabelStyle = { fontSize: 13, fontWeight: 700, color: C.dark, marginBottom: 6, display: 'block', textAlign: 'right' };
+
+/* ═══════════════════════════════════════════
+   SCREEN: STOCK CHECK (المخزون المسائي)
+   ═══════════════════════════════════════════ */
+export function StockScreen({ ingredients, setIngredients, stockSessions, setStockSessions, stockEntries, setStockEntries, ownerTookLog, setOwnerTookLog, showSuccess, onOpenProducts }) {
+  const [actuals, setActuals] = useState({});
+  const [reasonQueue, setReasonQueue] = useState(null);
+  const [showTookModal, setShowTookModal] = useState(false);
+  const [tookIngredientId, setTookIngredientId] = useState('');
+  const [tookQty, setTookQty] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newIng, setNewIng] = useState({ name: '', unit: 'غ', cost_per_unit: '', starting_stock: '' });
+  const [detailIng, setDetailIng] = useState(null);
+  const [detailDraft, setDetailDraft] = useState(null);
+  const [confirmDeleteIng, setConfirmDeleteIng] = useState(false);
+
+  const rows = useMemo(() => ingredients.map(ing => {
+    const expected = getExpectedQty(ing);
+    const raw = actuals[ing.id];
+    const hasActual = raw !== undefined && raw !== '';
+    const actual = hasActual ? Number(raw) : null;
+    const diff = hasActual ? actual - expected : null;
+    const diffDzd = hasActual ? diff * (Number(ing.cost_per_unit) || 0) : null;
+    return { ing, expected, hasActual, actual, diff, diffDzd };
+  }), [ingredients, actuals]);
+
+  const counted = rows.filter(r => r.hasActual);
+
+  const finalizeSession = (reasons) => {
+    const sessionId = Date.now();
+    const now = new Date().toISOString();
+    setStockSessions(prev => [{ id: sessionId, date: getArabicDate(), createdAt: now }, ...prev]);
+    setStockEntries(prev => [
+      ...counted.map(r => ({
+        id: `${sessionId}-${r.ing.id}`,
+        sessionId,
+        ingredientId: r.ing.id,
+        ingredientName: r.ing.name,
+        unit: r.ing.unit,
+        expected_qty: r.expected,
+        actual_qty: r.actual,
+        difference_qty: r.diff,
+        difference_dzd: r.diffDzd,
+        reason: reasons[r.ing.id] || null,
+        createdAt: now,
+      })),
+      ...prev,
+    ]);
+    setActuals({});
+    setReasonQueue(null);
+    showSuccess('تم حفظ الفحص المسائي ✓');
+  };
+
+  const handleSubmit = () => {
+    if (counted.length === 0) return;
+    const negatives = counted.filter(r => r.diff < 0);
+    if (negatives.length > 0) setReasonQueue({ rows: negatives, index: 0, reasons: {} });
+    else finalizeSession({});
+  };
+
+  const pickReason = (reason) => {
+    const currentRow = reasonQueue.rows[reasonQueue.index];
+    const reasons = { ...reasonQueue.reasons, [currentRow.ing.id]: reason };
+    if (reasonQueue.index + 1 < reasonQueue.rows.length) {
+      setReasonQueue({ ...reasonQueue, reasons, index: reasonQueue.index + 1 });
+    } else {
+      finalizeSession(reasons);
+    }
+  };
+
+  const handleTookConfirm = () => {
+    const ing = ingredients.find(i => i.id === Number(tookIngredientId));
+    const qty = Number(tookQty);
+    if (!ing || !qty || qty <= 0) return;
+    setOwnerTookLog(prev => [{ id: Date.now(), ingredientId: ing.id, ingredientName: ing.name, unit: ing.unit, qty, date: getArabicDate(), createdAt: new Date().toISOString() }, ...prev]);
+    setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, taken_deducted: (Number(i.taken_deducted) || 0) + qty } : i));
+    setShowTookModal(false);
+    setTookIngredientId('');
+    setTookQty('');
+    showSuccess('تم تسجيل ما أخذته ✓');
+  };
+
+  const handleAddIngredient = () => {
+    const name = newIng.name.trim();
+    if (!name) return;
+    const id = Math.max(0, ...ingredients.map(i => i.id)) + 1;
+    setIngredients(prev => [...prev, { id, name, unit: newIng.unit, cost_per_unit: Number(newIng.cost_per_unit) || 0, starting_stock: Number(newIng.starting_stock) || 0, sales_deducted: 0, taken_deducted: 0 }]);
+    setShowAddModal(false);
+    setNewIng({ name: '', unit: 'غ', cost_per_unit: '', starting_stock: '' });
+    showSuccess('تمت إضافة المكوّن ✓');
+  };
+
+  const openDetail = (ing) => {
+    setDetailIng(ing);
+    setDetailDraft({ name: ing.name, unit: ing.unit, cost_per_unit: String(ing.cost_per_unit) });
+    setConfirmDeleteIng(false);
+  };
+
+  const handleSaveDetail = () => {
+    const name = detailDraft.name.trim();
+    if (!name) return;
+    setIngredients(prev => prev.map(i => i.id === detailIng.id ? { ...i, name, unit: detailDraft.unit, cost_per_unit: Number(detailDraft.cost_per_unit) || 0 } : i));
+    setDetailIng(null);
+    showSuccess('تم حفظ التغييرات ✓');
+  };
+
+  const handleDeleteIngredient = () => {
+    setIngredients(prev => prev.filter(i => i.id !== detailIng.id));
+    setDetailIng(null);
+    showSuccess('تم حذف المكوّن ✓');
+  };
+
+  const detailEntries = detailIng ? stockEntries.filter(e => e.ingredientId === detailIng.id).slice(0, 5) : [];
+  const detailExpected = detailIng ? getExpectedQty(ingredients.find(i => i.id === detailIng.id) || detailIng) : 0;
+
+  return (
+    <div style={{ paddingBottom: 160, direction: 'rtl' }}>
+      <AppHeader
+        title="المخزون المسائي"
+        subtitle={getArabicDate()}
+        right={onOpenProducts ? <HeaderIconButton label="المنتجات" onClick={onOpenProducts}><Package size={22} color={C.dark} /></HeaderIconButton> : null}
+      />
+
+      <div style={{ display: 'flex', gap: 10, padding: '12px 16px 4px' }}>
+        <button onClick={() => setShowTookModal(true)} style={{ flex: 2, padding: '13px', borderRadius: 14, border: 'none', background: C.orange, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>أنا أخذت شيئاً 🤲</button>
+        <button onClick={() => setShowAddModal(true)} style={{ flex: 1, padding: '13px', borderRadius: 14, border: '1.5px dashed #D1D5DB', background: '#fff', color: C.dark, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>مكوّن +</button>
+      </div>
+
+      {stockSessions.length > 0 && (
+        <div style={{ padding: '4px 16px', fontSize: 12, color: C.gray, textAlign: 'right' }}>آخر فحص: {stockSessions[0].date}</div>
+      )}
+
+      <div style={{ padding: '8px 16px' }}>
+        {ingredients.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray, fontSize: 14 }}>لا توجد مكوّنات بعد. اضغط "مكوّن +" للبدء</div>
+        )}
+        {rows.map(({ ing, expected, hasActual, diff, diffDzd }) => {
+          const negative = hasActual && diff < 0;
+          const rowColor = !hasActual ? C.border : negative ? C.red : C.green;
+          return (
+            <div key={ing.id} style={{ background: !hasActual ? '#fff' : negative ? '#FEF2F2' : '#F0FDF4', borderRadius: 16, padding: '14px', marginBottom: 10, boxShadow: C.shadow, border: `1.5px solid ${rowColor}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div onClick={() => openDetail(ing)} style={{ flex: 1, cursor: 'pointer' }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>{ing.name} <span style={{ fontSize: 12, fontWeight: 600, color: C.gray }}>({ing.unit})</span></div>
+                  <div style={{ fontSize: 12, color: C.gray, marginTop: 4 }}>المتوقع: <span style={{ fontWeight: 800, color: C.dark }}>{fmt(expected)}</span> {ing.unit}</div>
+                </div>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="العدد الفعلي"
+                  value={actuals[ing.id] ?? ''}
+                  onChange={e => setActuals(prev => ({ ...prev, [ing.id]: e.target.value }))}
+                  style={{ width: 104, padding: '10px 8px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 15, fontWeight: 800, outline: 'none', textAlign: 'center', background: '#fff', boxSizing: 'border-box' }}
+                />
+              </div>
+              {hasActual && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: `1px dashed ${C.border}`, fontSize: 13, fontWeight: 800, color: rowColor }}>
+                  <span>الفرق: {diff > 0 ? '+' : ''}{fmt(diff)} {ing.unit}</span>
+                  <span>{diffDzd > 0 ? '+' : ''}{fmt(Math.round(diffDzd))} دج</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {ingredients.length > 0 && (
+        <div style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', padding: '12px 16px 14px', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', zIndex: 100, boxSizing: 'border-box' }}>
+          <button onClick={handleSubmit} disabled={counted.length === 0} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: counted.length === 0 ? '#D1D5DB' : C.blue, color: '#fff', fontSize: 15, fontWeight: 800, cursor: counted.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <Moon size={18} /> حفظ الفحص المسائي ({counted.length}/{ingredients.length})
+          </button>
+        </div>
+      )}
+
+      {showTookModal && (
+        <ModalCard title="أنا أخذت شيئاً" onClose={() => setShowTookModal(false)}>
+          <label style={modalLabelStyle}>المكوّن</label>
+          <select value={tookIngredientId} onChange={e => setTookIngredientId(e.target.value)} style={{ ...modalInputStyle, marginBottom: 12 }}>
+            <option value="">اختر المكوّن...</option>
+            {ingredients.map(i => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
+          </select>
+          <label style={modalLabelStyle}>الكمية المأخوذة</label>
+          <input type="number" inputMode="decimal" value={tookQty} onChange={e => setTookQty(e.target.value)} placeholder="0" style={{ ...modalInputStyle, marginBottom: 16 }} />
+          <button onClick={handleTookConfirm} style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: C.orange, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>تأكيد</button>
+          {ownerTookLog.length > 0 && (
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px dashed ${C.border}` }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: C.gray, marginBottom: 8 }}>آخر ما أخذته:</div>
+              {ownerTookLog.slice(0, 3).map(log => (
+                <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.dark, padding: '4px 0' }}>
+                  <span>{log.ingredientName}</span>
+                  <span style={{ fontWeight: 800 }}>{fmt(log.qty)} {log.unit}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </ModalCard>
+      )}
+
+      {showAddModal && (
+        <ModalCard title="إضافة مكوّن" onClose={() => setShowAddModal(false)}>
+          <label style={modalLabelStyle}>الاسم</label>
+          <input value={newIng.name} onChange={e => setNewIng({ ...newIng, name: e.target.value })} placeholder="مثال: قهوة مطحونة" style={{ ...modalInputStyle, marginBottom: 12 }} />
+          <label style={modalLabelStyle}>الوحدة</label>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            {UNITS.map(u => (
+              <button key={u} onClick={() => setNewIng({ ...newIng, unit: u })} style={{ flex: 1, padding: '10px', borderRadius: 12, border: newIng.unit === u ? 'none' : `1px solid ${C.border}`, background: newIng.unit === u ? C.blue : '#fff', color: newIng.unit === u ? '#fff' : C.dark, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{u}</button>
+            ))}
+          </div>
+          <label style={modalLabelStyle}>تكلفة الوحدة (دج)</label>
+          <input type="number" inputMode="decimal" value={newIng.cost_per_unit} onChange={e => setNewIng({ ...newIng, cost_per_unit: e.target.value })} placeholder="0" style={{ ...modalInputStyle, marginBottom: 12 }} />
+          <label style={modalLabelStyle}>المخزون الابتدائي</label>
+          <input type="number" inputMode="decimal" value={newIng.starting_stock} onChange={e => setNewIng({ ...newIng, starting_stock: e.target.value })} placeholder="0" style={{ ...modalInputStyle, marginBottom: 16 }} />
+          <button onClick={handleAddIngredient} style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>حفظ</button>
+        </ModalCard>
+      )}
+
+      {detailIng && detailDraft && (
+        <ModalCard title="تفاصيل المكوّن" onClose={() => setDetailIng(null)}>
+          <label style={modalLabelStyle}>الاسم</label>
+          <input value={detailDraft.name} onChange={e => setDetailDraft({ ...detailDraft, name: e.target.value })} style={{ ...modalInputStyle, marginBottom: 12 }} />
+          <label style={modalLabelStyle}>الوحدة</label>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            {UNITS.map(u => (
+              <button key={u} onClick={() => setDetailDraft({ ...detailDraft, unit: u })} style={{ flex: 1, padding: '10px', borderRadius: 12, border: detailDraft.unit === u ? 'none' : `1px solid ${C.border}`, background: detailDraft.unit === u ? C.blue : '#fff', color: detailDraft.unit === u ? '#fff' : C.dark, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{u}</button>
+            ))}
+          </div>
+          <label style={modalLabelStyle}>تكلفة الوحدة (دج)</label>
+          <input type="number" inputMode="decimal" value={detailDraft.cost_per_unit} onChange={e => setDetailDraft({ ...detailDraft, cost_per_unit: e.target.value })} style={{ ...modalInputStyle, marginBottom: 12 }} />
+
+          <div style={{ background: '#EFF6FF', borderRadius: 12, padding: '12px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>قيمة المخزون المتوقع</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: C.blue }}>{fmt(Math.round(detailExpected * (Number(detailDraft.cost_per_unit) || 0)))} دج</span>
+          </div>
+
+          <div style={{ fontSize: 12, fontWeight: 800, color: C.gray, marginBottom: 8 }}>آخر 5 فروقات:</div>
+          {detailEntries.length === 0 ? (
+            <div style={{ fontSize: 12, color: C.gray, textAlign: 'center', padding: '10px 0', marginBottom: 8 }}>لا توجد فروقات مسجلة</div>
+          ) : detailEntries.map(e => (
+            <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '6px 0', borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ fontWeight: 800, color: e.difference_qty < 0 ? C.red : C.green }}>{e.difference_qty > 0 ? '+' : ''}{fmt(e.difference_qty)} {e.unit}</span>
+              <span style={{ color: C.gray }}>{e.reason || '—'}</span>
+              <span style={{ fontWeight: 800, color: e.difference_qty < 0 ? C.red : C.green }}>{fmt(Math.round(e.difference_dzd))} دج</span>
+            </div>
+          ))}
+
+          <button onClick={handleSaveDetail} style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: C.green, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Save size={16} /> حفظ التغييرات</button>
+          {confirmDeleteIng ? (
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button onClick={handleDeleteIngredient} style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: C.red, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>تأكيد الحذف</button>
+              <button onClick={() => setConfirmDeleteIng(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmDeleteIng(true)} style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: '#FEE2E2', color: C.red, fontSize: 13, fontWeight: 800, cursor: 'pointer', marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Trash2 size={15} /> حذف المكوّن</button>
+          )}
+        </ModalCard>
+      )}
+
+      {reasonQueue && (
+        <ModalCard title="سبب النقص — إجباري" locked>
+          {(() => {
+            const r = reasonQueue.rows[reasonQueue.index];
+            return (
+              <>
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: C.dark }}>{r.ing.name}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginTop: 6 }}>ناقص {fmt(Math.abs(r.diff))} {r.ing.unit} ({fmt(Math.round(Math.abs(r.diffDzd)))} دج)</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {VARIANCE_REASONS.map(reason => (
+                    <button key={reason} onClick={() => pickReason(reason)} style={{ padding: '16px 8px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>{reason}</button>
+                  ))}
+                </div>
+                {reasonQueue.rows.length > 1 && (
+                  <div style={{ textAlign: 'center', fontSize: 12, color: C.gray, marginTop: 14 }}>{reasonQueue.index + 1} / {reasonQueue.rows.length}</div>
+                )}
+              </>
+            );
+          })()}
+        </ModalCard>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN: PRODUCT DETAIL (تفاصيل المنتج)
+   ═══════════════════════════════════════════ */
+export function ProductDetailScreen({ product, products, setProducts, ingredients, productRecipes, setProductRecipes, todaySales, showSuccess, onBack }) {
+  const current = products.find(p => p.id === product?.id) || product;
+  const [showAddRecipe, setShowAddRecipe] = useState(false);
+  const [recipeIngId, setRecipeIngId] = useState('');
+  const [recipeQty, setRecipeQty] = useState('');
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [priceDraft, setPriceDraft] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const recipe = useMemo(() => productRecipes
+    .filter(r => r.product_id === current.id)
+    .map(r => {
+      const ing = ingredients.find(i => i.id === r.ingredient_id);
+      return ing ? { ...r, ing, cost: (Number(r.quantity_used) || 0) * (Number(ing.cost_per_unit) || 0) } : null;
+    })
+    .filter(Boolean), [productRecipes, ingredients, current.id]);
+
+  const totalCost = recipe.reduce((s, r) => s + r.cost, 0);
+  const sellPrice = Number(current.sellPrice) || 0;
+  const profit = sellPrice - totalCost;
+  const margin = sellPrice > 0 ? (profit / sellPrice) * 100 : 0;
+  const marginColor = margin > 40 ? C.green : margin >= 20 ? C.orange : C.red;
+  const marginLabel = margin > 40 ? 'صحي' : margin >= 20 ? 'منخفض' : 'خطر';
+
+  const isBestSeller = useMemo(() => {
+    const map = {};
+    todaySales.forEach(s => { map[s.productId] = (map[s.productId] || 0) + s.qty; });
+    const top = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
+    return !!top && Number(top[0]) === current.id;
+  }, [todaySales, current.id]);
+
+  const catColor = categoryColors[current.category] || categoryColors['أخرى'];
+  const imagePath = current.image || productImageMap[current.id];
+
+  const handleAddRecipeRow = () => {
+    const ing = ingredients.find(i => i.id === Number(recipeIngId));
+    const qty = Number(recipeQty);
+    if (!ing || !qty || qty <= 0) return;
+    setProductRecipes(prev => [...prev, { id: Date.now(), product_id: current.id, ingredient_id: ing.id, quantity_used: qty }]);
+    setProducts(prev => prev.map(p => p.id === current.id ? { ...p, has_recipe: true } : p));
+    setShowAddRecipe(false);
+    setRecipeIngId('');
+    setRecipeQty('');
+    showSuccess('تمت إضافة المكوّن للوصفة ✓');
+  };
+
+  const handleSavePrice = () => {
+    const price = Number(priceDraft);
+    if (!price || price <= 0) return;
+    setProducts(prev => prev.map(p => p.id === current.id ? { ...p, sellPrice: price } : p));
+    setEditingPrice(false);
+    showSuccess('تم تعديل السعر ✓');
+  };
+
+  const handleToggleActive = () => {
+    setProducts(prev => prev.map(p => p.id === current.id ? { ...p, is_active: !p.is_active } : p));
+    showSuccess(current.is_active ? 'تم تعطيل المنتج ✓' : 'تم تفعيل المنتج ✓');
+  };
+
+  const handleDelete = () => {
+    setProducts(prev => prev.filter(p => p.id !== current.id));
+    showSuccess('تم حذف المنتج ✓');
+    onBack();
+  };
+
+  const R = 44;
+  const CIRC = 2 * Math.PI * R;
+  const pct = Math.max(0, Math.min(100, margin));
+
+  return (
+    <div style={{ paddingBottom: 100, direction: 'rtl' }}>
+      <AppHeader
+        title={current.name}
+        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+        border
+      />
+
+      <div style={{ textAlign: 'center', padding: '20px 16px 8px' }}>
+        <div style={{ width: 110, height: 110, borderRadius: 20, background: catColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', overflow: 'hidden' }}>
+          {imagePath ? (
+            <img src={imagePath} alt={current.name} style={{ width: '80%', height: '80%', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
+          ) : (
+            <span style={{ fontSize: 48 }}>{current.emoji}</span>
+          )}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: C.dark }}>{current.name}</div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: catColor.accent, background: catColor.bg, padding: '4px 14px', borderRadius: 20 }}>{current.category}</span>
+          {isBestSeller && <span style={{ fontSize: 12, fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '4px 14px', borderRadius: 20 }}>⭐ الأكثر مبيعاً</span>}
+          {!current.is_active && <span style={{ fontSize: 12, fontWeight: 800, color: C.gray, background: '#F3F4F6', padding: '4px 14px', borderRadius: 20 }}>معطل</span>}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, padding: '12px 16px' }}>
+        {[
+          { label: 'التكلفة الإجمالية', value: totalCost, color: C.orange },
+          { label: 'سعر البيع', value: sellPrice, color: C.blue },
+          { label: 'الربح', value: profit, color: profit >= 0 ? C.green : C.red },
+        ].map((box, i) => (
+          <div key={i} style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', boxShadow: C.shadow, textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: C.gray, marginBottom: 6 }}>{box.label}</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: box.color }}>{fmt(Math.round(box.value))} <span style={{ fontSize: 10 }}>دج</span></div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ margin: '8px 16px', background: '#fff', borderRadius: C.radius, padding: '18px 16px', boxShadow: C.shadow }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>وصفة المنتج</h3>
+          <button onClick={() => setShowAddRecipe(true)} style={{ padding: '8px 14px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>إضافة مكوّن +</button>
+        </div>
+        {recipe.length === 0 ? (
+          <div style={{ textAlign: 'center', color: C.gray, fontSize: 13, padding: '16px 0' }}>لا توجد مكوّنات في الوصفة بعد</div>
+        ) : (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 0.8fr', padding: '6px 0', borderBottom: `1px solid ${C.border}` }}>
+              {['المكوّن', 'الكمية', 'التكلفة', '%'].map(h => <span key={h} style={{ fontSize: 11, color: C.gray, fontWeight: 700 }}>{h}</span>)}
+            </div>
+            {recipe.map(r => (
+              <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 0.8fr', padding: '10px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>{r.ing.name}</span>
+                <span style={{ fontSize: 12, color: C.gray }}>{fmt(r.quantity_used)} {r.ing.unit}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: C.dark }}>{fmt(Math.round(r.cost))} دج</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: C.blue }}>{totalCost > 0 ? Math.round((r.cost / totalCost) * 100) : 0}%</span>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      <div style={{ margin: '8px 16px', background: '#fff', borderRadius: C.radius, padding: '20px 16px', boxShadow: C.shadow, textAlign: 'center' }}>
+        <h3 style={{ fontSize: 15, fontWeight: 800, color: C.dark, marginBottom: 14 }}>هامش الربح</h3>
+        <div style={{ position: 'relative', width: 120, height: 120, margin: '0 auto' }}>
+          <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx="60" cy="60" r={R} fill="none" stroke="#F0F0F0" strokeWidth="10" />
+            <circle cx="60" cy="60" r={R} fill="none" stroke={marginColor} strokeWidth="10" strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - pct / 100)} style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: marginColor }}>{Math.round(margin)}%</div>
+        </div>
+        <div style={{ marginTop: 10, fontSize: 14, fontWeight: 800, color: marginColor }}>{marginLabel}</div>
+      </div>
+
+      <div style={{ margin: '8px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {editingPrice ? (
+          <div style={{ background: '#fff', borderRadius: 14, padding: '12px', boxShadow: C.shadow, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input type="number" inputMode="decimal" value={priceDraft} onChange={e => setPriceDraft(e.target.value)} autoFocus placeholder="السعر الجديد" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 15, fontWeight: 800, outline: 'none', textAlign: 'center', boxSizing: 'border-box', minWidth: 0 }} />
+            <button onClick={handleSavePrice} style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: C.green, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>حفظ</button>
+            <button onClick={() => setEditingPrice(false)} style={{ padding: '10px 14px', borderRadius: 10, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+          </div>
+        ) : (
+          <button onClick={() => { setPriceDraft(String(sellPrice)); setEditingPrice(true); }} style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${C.blue}`, background: '#fff', color: C.blue, fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Pencil size={16} /> تعديل السعر</button>
+        )}
+        <button onClick={handleToggleActive} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: current.is_active ? '#F3F4F6' : C.green, color: current.is_active ? C.dark : '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Power size={16} /> {current.is_active ? 'تعطيل المنتج' : 'تفعيل المنتج'}</button>
+        {confirmDelete ? (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleDelete} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.red, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>تأكيد الحذف</button>
+            <button onClick={() => setConfirmDelete(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirmDelete(true)} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: '#FEE2E2', color: C.red, fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Trash2 size={16} /> حذف المنتج</button>
+        )}
+      </div>
+
+      {showAddRecipe && (
+        <ModalCard title="إضافة مكوّن للوصفة" onClose={() => setShowAddRecipe(false)}>
+          <label style={modalLabelStyle}>المكوّن</label>
+          <select value={recipeIngId} onChange={e => setRecipeIngId(e.target.value)} style={{ ...modalInputStyle, marginBottom: 12 }}>
+            <option value="">اختر المكوّن...</option>
+            {ingredients.map(i => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
+          </select>
+          <label style={modalLabelStyle}>الكمية لكل وحدة مباعة</label>
+          <input type="number" inputMode="decimal" value={recipeQty} onChange={e => setRecipeQty(e.target.value)} placeholder="0" style={{ ...modalInputStyle, marginBottom: 16 }} />
+          <button onClick={handleAddRecipeRow} style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>تأكيد</button>
+        </ModalCard>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN: MORE (المزيد)
+   ═══════════════════════════════════════════ */
+export function MoreScreen({ onOpenReports, onOpenPage }) {
+  const groups = [
+    {
+      title: 'المالية',
+      items: [
+        { label: 'الديون', icon: Wallet, color: C.red, bg: '#FEE2E2', action: () => onOpenPage('الديون') },
+        { label: 'المصاريف', icon: Receipt, color: C.orange, bg: '#FFF7ED', action: () => onOpenPage('المصاريف') },
+      ],
+    },
+    {
+      title: 'الإدارة',
+      items: [
+        { label: 'العملاء', icon: Users, color: C.blue, bg: '#EFF6FF', action: () => onOpenPage('العملاء') },
+        { label: 'الموردون', icon: Truck, color: C.orange, bg: '#FFF7ED', action: () => onOpenPage('الموردون') },
+        { label: 'التقارير', icon: BarChart3, color: C.green, bg: '#F0FDF4', action: () => onOpenReports() },
+      ],
+    },
+    {
+      title: 'النظام',
+      items: [
+        { label: 'الإعدادات', icon: Settings, color: C.dark, bg: '#F3F4F6', action: () => onOpenPage('الإعدادات') },
+        { label: 'الدعم', icon: HelpCircle, color: C.blue, bg: '#EFF6FF', action: () => onOpenPage('الدعم') },
+        { label: 'دروس تعليمية', icon: BookOpen, color: C.green, bg: '#F0FDF4', action: () => onOpenPage('دروس تعليمية') },
+      ],
+    },
+  ];
+
+  return (
+    <div style={{ paddingBottom: 100, direction: 'rtl', minHeight: '100vh', background: C.bg }}>
+      <AppHeader title="المزيد" />
+      {groups.map(group => (
+        <div key={group.title} style={{ padding: '8px 16px' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: C.gray, marginBottom: 10, textAlign: 'right' }}>{group.title}</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {group.items.map(item => {
+              const Icon = item.icon;
+              return (
+                <button key={item.label} onClick={item.action} style={{ background: '#fff', borderRadius: C.radius, border: 'none', padding: '18px 8px', boxShadow: C.shadow, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={22} color={item.color} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: C.dark }}>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   RECEIPT MODAL (الفاتورة)
+   ═══════════════════════════════════════════ */
+export function ReceiptModal({ receipt, shopName, onClose }) {
+  if (!receipt) return null;
+  const items = receipt.items || [];
+  const itemTotal = (it) => it.total ?? (Number(it.qty) || 0) * (Number(it.price) || 0);
+
+  const shareWhatsApp = () => {
+    let text = `🧾 فاتورة - ${shopName}\n`;
+    text += `📅 ${receipt.dateText} ${receipt.timeText}\n`;
+    text += `رقم: ${receipt.number}\n`;
+    text += `─────────────\n`;
+    items.forEach(it => { text += `${it.name} × ${it.qty} = ${fmt(itemTotal(it))} DA\n`; });
+    text += `─────────────\n`;
+    text += `💰 المجموع: ${fmt(receipt.total)} DA\n`;
+    text += `شكراً لزيارتكم`;
+    window.open(`whatsapp://send?text=${encodeURIComponent(text)}`);
+  };
+
+  const Dashed = () => <div style={{ borderTop: '1px dashed #C8C8C8', margin: '12px 0' }} />;
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, animation: 'fadeIn 0.2s ease' }} />
+      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'min(340px, 92vw)', maxHeight: '85vh', overflowY: 'auto', background: '#fff', borderRadius: 20, padding: '22px 20px', zIndex: 301, boxSizing: 'border-box', direction: 'rtl', boxShadow: '0 10px 40px rgba(0,0,0,0.25)' }}>
+        <h2 style={{ fontSize: 22, fontWeight: 900, color: C.dark, textAlign: 'center' }}>{shopName}</h2>
+        <Dashed />
+        <div style={{ fontSize: 13, color: C.dark, textAlign: 'right' }}>{receipt.dateText} — {receipt.timeText}</div>
+        <div style={{ fontSize: 13, color: C.gray, textAlign: 'right', marginTop: 4 }}>رقم الفاتورة: {receipt.number}</div>
+        <Dashed />
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 1fr 1fr', padding: '4px 0', borderBottom: `1px solid ${C.border}` }}>
+          {['المنتج', 'الكمية', 'السعر', 'المجموع'].map(h => <span key={h} style={{ fontSize: 11, color: C.gray, fontWeight: 700 }}>{h}</span>)}
+        </div>
+        {items.map((it, i) => (
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 1fr 1fr', padding: '8px 0', borderBottom: i < items.length - 1 ? `1px solid ${C.border}` : 'none', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>{it.name}</span>
+            <span style={{ fontSize: 12, color: C.gray }}>×{it.qty}</span>
+            <span style={{ fontSize: 12, color: C.gray }}>{fmt(it.price)}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: C.dark }}>{fmt(itemTotal(it))}</span>
+          </div>
+        ))}
+        <Dashed />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 900 }}>
+          <span style={{ color: C.dark }}>المجموع الكلي:</span>
+          <span style={{ color: C.blue }}>{fmt(receipt.total)} دج</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginTop: 8 }}>
+          <span style={{ color: C.gray }}>طريقة الدفع:</span>
+          <span style={{ fontWeight: 800, color: C.dark }}>{receipt.paymentMethod || 'نقداً'}</span>
+        </div>
+        <div style={{ textAlign: 'center', fontStyle: 'italic', fontSize: 13, color: C.gray, margin: '16px 0 18px' }}>شكراً لزيارتكم</div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+          <button onClick={() => window.print()} style={{ flex: 1, padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Printer size={16} /> طباعة</button>
+          <button onClick={shareWhatsApp} style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: C.green, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><MessageCircle size={16} /> مشاركة عبر واتساب</button>
+        </div>
+        <button onClick={onClose} style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>إغلاق</button>
+      </div>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   PLACEHOLDER SCREEN (قيد الإنشاء)
+   ═══════════════════════════════════════════ */
+export function PlaceholderScreen({ title, onBack }) {
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, direction: 'rtl' }}>
+      <AppHeader
+        title={title}
+        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+        border
+      />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', textAlign: 'center' }}>
+        <div style={{ width: 88, height: 88, borderRadius: '50%', background: '#fff', boxShadow: C.shadow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, marginBottom: 20 }}>🚧</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>هذه الصفحة قيد الإنشاء</div>
+        <div style={{ fontSize: 14, color: C.gray, marginTop: 8 }}>قريباً</div>
       </div>
     </div>
   );
