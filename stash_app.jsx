@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ShoppingCart, Package, ShoppingBag, Moon, BarChart3,
   Search, Menu, Bell, ChevronLeft, ChevronDown, ChevronUp,
@@ -10,9 +10,9 @@ import {
   Clock, Phone
 } from 'lucide-react';
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    COLOR SYSTEM
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 const C = {
   blue: '#2563EB',
   green: '#16A34A',
@@ -27,10 +27,10 @@ const C = {
   shadow: '0 1px 4px rgba(0,0,0,0.06)',
 };
 
-const DEFAULT_CATEGORIES = ['وجبات', 'مشروبات', 'إضافات'];
-const ALL_FILTER = 'الكل';
+const DEFAULT_CATEGORIES = ['┘êÏ¼Ï¿ÏºÏ¬', '┘àÏ┤Ï▒┘êÏ¿ÏºÏ¬', 'ÏÑÏÂÏº┘üÏºÏ¬'];
+const ALL_FILTER = 'Ïº┘ä┘â┘ä';
 const CATEGORY_FILTER_PREFIX = 'category:';
-const MANAGE_CATEGORIES_LABEL = 'فئات ▾';
+const MANAGE_CATEGORIES_LABEL = '┘üÏªÏºÏ¬ Ôû¥';
 
 const uniqueCategories = (items) => [
   ...new Set(
@@ -54,9 +54,9 @@ const getDaysAgo = (value) => {
 };
 
 const categoryColors = {
-  'مشروبات': { bg: '#EBF4FF', accent: '#2563EB' },
-  'أكل': { bg: '#FFF1F0', accent: '#E67E00' },
-  'أخرى': { bg: '#F0FFF4', accent: '#16A34A' },
+  '┘àÏ┤Ï▒┘êÏ¿ÏºÏ¬': { bg: '#EBF4FF', accent: '#2563EB' },
+  'Ïú┘â┘ä': { bg: '#FFF1F0', accent: '#E67E00' },
+  'ÏúÏ«Ï▒┘ë': { bg: '#F0FFF4', accent: '#16A34A' },
 };
 
 const fmt = (n) => {
@@ -69,34 +69,34 @@ const fmt = (n) => {
 };
 
 const formatUnit = (qty, unit) => {
-  if (unit === 'غ' && qty >= 1000) {
-    return `${(qty / 1000).toFixed(1).replace(/\.0$/, '')} كغ`;
+  if (unit === 'Ï║' && qty >= 1000) {
+    return `${(qty / 1000).toFixed(1).replace(/\.0$/, '')} ┘âÏ║`;
   }
-  if (unit === 'مل' && qty >= 1000) {
-    return `${(qty / 1000).toFixed(1).replace(/\.0$/, '')} لتر`;
+  if (unit === '┘à┘ä' && qty >= 1000) {
+    return `${(qty / 1000).toFixed(1).replace(/\.0$/, '')} ┘äÏ¬Ï▒`;
   }
   return `${qty} ${unit}`;
 };
 
-const UNITS = ['غ', 'كغ', 'مل', 'لتر', 'حبة', 'ملعقة', 'كوب', 'رشة'];
+const UNITS = ['Ï║', '┘âÏ║', '┘à┘ä', '┘äÏ¬Ï▒', 'Ï¡Ï¿Ï®', '┘à┘äÏ╣┘éÏ®', '┘â┘êÏ¿', 'Ï▒Ï┤Ï®'];
 const UNIT_GROUPS = [
-  { id: 'weight', label: 'وزن', units: ['غ', 'كغ'] },
-  { id: 'volume', label: 'سائل', units: ['مل', 'لتر'] },
-  { id: 'qty', label: 'كمية', units: ['حبة', 'ملعقة', 'كوب', 'رشة'] }
+  { id: 'weight', label: '┘êÏ▓┘å', units: ['Ï║', '┘âÏ║'] },
+  { id: 'volume', label: 'Ï│ÏºÏª┘ä', units: ['┘à┘ä', '┘äÏ¬Ï▒'] },
+  { id: 'qty', label: '┘â┘à┘èÏ®', units: ['Ï¡Ï¿Ï®', '┘à┘äÏ╣┘éÏ®', '┘â┘êÏ¿', 'Ï▒Ï┤Ï®'] }
 ];
-const VARIANCE_REASONS = ['هدر', 'أشك في سرقة', 'أنا أخذته', 'خطأ في العد'];
+const VARIANCE_REASONS = ['┘çÏ»Ï▒', 'ÏúÏ┤┘â ┘ü┘è Ï│Ï▒┘éÏ®', 'Ïú┘åÏº ÏúÏ«Ï░Ï¬┘ç', 'Ï«ÏÀÏú ┘ü┘è Ïº┘äÏ╣Ï»'];
 const getExpectedQty = (ing) =>
   Math.max(0, (Number(ing.starting_stock) || 0) - (Number(ing.sales_deducted) || 0) - (Number(ing.taken_deducted) || 0));
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    PRODUCT IMAGE MAP
-   ═══════════════════════════════════════════ */
-/* ═══════════════════════════════════════════
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    PRODUCT ENTITY COMPONENT
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function ProductEntity({ product, variant = 'grid', inCart = null, onClick = null, actionBtn = null }) {
   const imagePath = product.image;
-  const catColor = categoryColors[product.category] || categoryColors['أخرى'];
+  const catColor = categoryColors[product.category] || categoryColors['ÏúÏ«Ï▒┘ë'];
   const outOfStock = product.qty === 0;
 
   const ImageComponent = ({ size }) => {
@@ -109,12 +109,12 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
           maxWidth: size === 'form' ? '120px' : (size === 'sheet' ? '100px' : 'none'),
           aspectRatio: '1',
           overflow: 'hidden',
-          borderRadius: size === 'grid' ? 0 : '12px',
-          backgroundColor: size === 'grid' ? '#f3f4f6' : 'transparent',
+          borderRadius: '12px',
+          backgroundColor: 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: size === 'grid' ? 0 : (size === 'sheet' ? '0 auto 12px' : '0 auto 8px')
+          margin: size === 'sheet' ? '0 auto 12px' : '0 auto 8px'
         }}>
           {imagePath ? (
             <>
@@ -122,9 +122,9 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
                 src={imagePath}
                 alt={product.name}
                 style={{
-                  width: size === 'grid' ? '100%' : '80%',
-                  height: size === 'grid' ? '100%' : '80%',
-                  objectFit: size === 'grid' ? 'cover' : 'contain',
+                  width: '80%',
+                  height: '80%',
+                  objectFit: 'contain',
                   display: 'block'
                 }}
                 onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
@@ -186,31 +186,29 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
         onClick={onClick}
         style={{
           background: '#fff', borderRadius: C.radius,
-          textAlign: 'center',
+          padding: '24px 16px', textAlign: 'center',
           boxShadow: C.shadow, position: 'relative',
           cursor: 'pointer',
           opacity: !product.is_active ? 0.5 : 1,
           border: inCart ? `3px solid ${C.blue}` : '3px solid transparent',
           transition: 'all 0.2s ease',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column'
         }}
       >
         {inCart && (
-          <div style={{ position: 'absolute', top: 12, right: 12, background: C.green, color: '#fff', fontSize: 14, fontWeight: 700, padding: '4px 12px', borderRadius: 8, zIndex: 2 }}>×{inCart.qty}</div>
+          <div style={{ position: 'absolute', top: 12, right: 12, background: C.green, color: '#fff', fontSize: 14, fontWeight: 700, padding: '4px 12px', borderRadius: 8, zIndex: 2 }}>├ù{inCart.qty}</div>
         )}
         <ImageComponent size="grid" />
-        <div style={{ padding: '16px 12px 20px', display: 'flex', flexDirection: 'column', flex: 1, background: '#fff' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: C.dark, marginBottom: 8, lineHeight: 1.4 }}>{product.name}</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: C.blue, marginTop: 'auto' }}>{product.sellPrice} <span style={{ fontSize: 18 }}>DA</span></div>
-        </div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: C.dark, marginBottom: 8, lineHeight: 1.4, marginTop: 12 }}>{product.name}</div>
+        <div style={{ fontSize: 28, fontWeight: 900, color: C.blue }}>{product.sellPrice} <span style={{ fontSize: 18 }}>DA</span></div>
+        <div style={{ fontSize: 16, color: C.gray, marginTop: 8, textAlign: 'left', direction: 'ltr' }}>├ù {product.qty}</div>
       </div>
     );
   }
 
   if (variant === 'list') {
-    const soldToday = product.soldToday || 0;
+    const status = !product.is_active ? { text: '┘àÏ╣ÏÀ┘ä', color: C.gray, bg: '#F3F4F6' }
+      : product.qty <= 10 ? { text: '┘à┘åÏ«┘üÏÂ', color: C.orange, bg: '#FFF7ED' }
+      : { text: '┘àÏ¬┘ê┘üÏ▒', color: C.green, bg: '#F0FDF4' };
 
     return (
       <div onClick={onClick} style={{
@@ -221,15 +219,14 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
         <ImageComponent size="list" />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: C.dark, marginBottom: 4 }}>{product.name}</div>
+          <div style={{ fontSize: 13, color: C.gray }}>{product.buyPrice} DA</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F0FDF4', padding: '4px 10px', borderRadius: 20 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.green }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: C.green }}>باع اليوم</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: status.bg, padding: '4px 10px', borderRadius: 20 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: status.color }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: status.color }}>{status.text}</span>
         </div>
         <div style={{ textAlign: 'center', marginLeft: 8, minWidth: 40 }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: C.green, whiteSpace: 'nowrap' }}>
-            {soldToday}
-          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.dark }}>{product.qty}</div>
         </div>
         {actionBtn || <ChevronLeft size={18} color={C.gray} />}
       </div>
@@ -266,9 +263,9 @@ function ProductEntity({ product, variant = 'grid', inCart = null, onClick = nul
   return null;
 }
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    useLocalStorage HOOK
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function useLocalStorage(key, initialValue) {
   const [storedValue, setStoredValue] = useState(() => {
     try {
@@ -291,56 +288,56 @@ function useLocalStorage(key, initialValue) {
   return [storedValue, setStoredValue];
 }
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    INITIAL DATA
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 const initialProducts = [
-  { id: 1, name: "برغر", emoji: "🍔", image: "/imajes/burger.png", category: "وجبات", sellPrice: 400, buyPrice: 0, qty: 100, minAlert: 10, is_active: true, has_recipe: true },
-  { id: 2, name: "بيتزا", emoji: "🍕", image: "/imajes/pizza.png", category: "وجبات", sellPrice: 600, buyPrice: 0, qty: 100, minAlert: 10, is_active: true, has_recipe: true },
-  { id: 3, name: "شاورما", emoji: "🌯", image: "/imajes/shawarma.png", category: "وجبات", sellPrice: 350, buyPrice: 0, qty: 100, minAlert: 10, is_active: true, has_recipe: true },
-  { id: 4, name: "طاكوس", emoji: "🌮", image: "/imajes/tacos.png", category: "وجبات", sellPrice: 450, buyPrice: 0, qty: 100, minAlert: 10, is_active: true, has_recipe: true },
-  { id: 5, name: "بطاطا مقلية", emoji: "🍟", image: "/imajes/fries.png", category: "إضافات", sellPrice: 150, buyPrice: 0, qty: 100, minAlert: 10, is_active: true, has_recipe: true },
-  { id: 6, name: "مشروب غازي", emoji: "🥤", image: "/imajes/drink.png", category: "مشروبات", sellPrice: 100, buyPrice: 80, qty: 50, minAlert: 10, is_active: true, has_recipe: false },
+  { id:1, name:"Ï¿Ï▒Ï║Ï▒", emoji:"­ƒìö", image:"/imajes/burger.png", category:"┘êÏ¼Ï¿ÏºÏ¬", sellPrice:400, buyPrice:0, qty:100, minAlert:10, is_active:true, has_recipe:true },
+  { id:2, name:"Ï¿┘èÏ¬Ï▓Ïº", emoji:"­ƒìò", image:"/imajes/pizza.png", category:"┘êÏ¼Ï¿ÏºÏ¬", sellPrice:600, buyPrice:0, qty:100, minAlert:10, is_active:true, has_recipe:true },
+  { id:3, name:"Ï┤Ïº┘êÏ▒┘àÏº", emoji:"­ƒî»", image:"/imajes/shawarma.png", category:"┘êÏ¼Ï¿ÏºÏ¬", sellPrice:350, buyPrice:0, qty:100, minAlert:10, is_active:true, has_recipe:true },
+  { id:4, name:"ÏÀÏº┘â┘êÏ│", emoji:"­ƒî«", image:"/imajes/tacos.png", category:"┘êÏ¼Ï¿ÏºÏ¬", sellPrice:450, buyPrice:0, qty:100, minAlert:10, is_active:true, has_recipe:true },
+  { id:5, name:"Ï¿ÏÀÏºÏÀÏº ┘à┘é┘ä┘èÏ®", emoji:"­ƒìƒ", image:"/imajes/fries.png", category:"ÏÑÏÂÏº┘üÏºÏ¬", sellPrice:150, buyPrice:0, qty:100, minAlert:10, is_active:true, has_recipe:true },
+  { id:6, name:"┘àÏ┤Ï▒┘êÏ¿ Ï║ÏºÏ▓┘è", emoji:"­ƒÑñ", image:"/imajes/drink.png", category:"┘àÏ┤Ï▒┘êÏ¿ÏºÏ¬", sellPrice:100, buyPrice:80, qty:50, minAlert:10, is_active:true, has_recipe:false },
 ];
 
 const initialIngredients = [
-  { id: 101, name: "لحم مفروم", unit: "غ", starting_stock: 5000, price_per_unit: 1.5, min_stock: 1000, image: "/imajes/minced_meat.png", emoji: "🥩" },
-  { id: 102, name: "عجينة بيتزا", unit: "حبة", starting_stock: 50, price_per_unit: 40, min_stock: 10, image: "/imajes/pizza_dough.png", emoji: "🍕" },
-  { id: 103, name: "دجاج شاورما", unit: "غ", starting_stock: 10000, price_per_unit: 0.8, min_stock: 2000, image: "/imajes/shawarma_chicken.png", emoji: "🍗" },
-  { id: 104, name: "خبز طاكوس", unit: "حبة", starting_stock: 100, price_per_unit: 20, min_stock: 20, image: "/imajes/tacos_bread.png", emoji: "🌮" },
-  { id: 105, name: "بطاطا", unit: "غ", starting_stock: 20000, price_per_unit: 0.1, min_stock: 5000, image: "/imajes/potatoes.png", emoji: "🥔" },
-  { id: 106, name: "جبن", unit: "غ", starting_stock: 3000, price_per_unit: 1.2, min_stock: 500, image: "/imajes/cheese.png", emoji: "🧀" },
-  { id: 107, name: "خبز برغر", unit: "حبة", starting_stock: 50, price_per_unit: 15, min_stock: 10, image: "/imajes/burger_buns.png", emoji: "🍔" },
-  { id: 108, name: "صلصة", unit: "مل", starting_stock: 2000, price_per_unit: 0.2, min_stock: 500, image: "/imajes/sauce.png", emoji: "🥣" },
+  { id: 101, name: "┘äÏ¡┘à ┘à┘üÏ▒┘ê┘à", unit: "Ï║", starting_stock: 5000, price_per_unit: 1.5, min_stock: 1000 },
+  { id: 102, name: "Ï╣Ï¼┘è┘åÏ® Ï¿┘èÏ¬Ï▓Ïº", unit: "Ï¡Ï¿Ï®", starting_stock: 50, price_per_unit: 40, min_stock: 10 },
+  { id: 103, name: "Ï»Ï¼ÏºÏ¼ Ï┤Ïº┘êÏ▒┘àÏº", unit: "Ï║", starting_stock: 10000, price_per_unit: 0.8, min_stock: 2000 },
+  { id: 104, name: "Ï«Ï¿Ï▓ ÏÀÏº┘â┘êÏ│", unit: "Ï¡Ï¿Ï®", starting_stock: 100, price_per_unit: 20, min_stock: 20 },
+  { id: 105, name: "Ï¿ÏÀÏºÏÀÏº", unit: "Ï║", starting_stock: 20000, price_per_unit: 0.1, min_stock: 5000 },
+  { id: 106, name: "Ï¼Ï¿┘å", unit: "Ï║", starting_stock: 3000, price_per_unit: 1.2, min_stock: 500 },
+  { id: 107, name: "Ï«Ï¿Ï▓ Ï¿Ï▒Ï║Ï▒", unit: "Ï¡Ï¿Ï®", starting_stock: 50, price_per_unit: 15, min_stock: 10 },
+  { id: 108, name: "ÏÁ┘äÏÁÏ®", unit: "┘à┘ä", starting_stock: 2000, price_per_unit: 0.2, min_stock: 500 },
 ];
 
 const initialProductRecipes = [
-  { id: 201, product_id: 1, ingredient_id: 107, quantity_used: 1 },
-  { id: 202, product_id: 1, ingredient_id: 101, quantity_used: 150 },
-  { id: 203, product_id: 1, ingredient_id: 106, quantity_used: 20 },
-  { id: 204, product_id: 2, ingredient_id: 102, quantity_used: 1 },
-  { id: 205, product_id: 2, ingredient_id: 106, quantity_used: 100 },
-  { id: 206, product_id: 3, ingredient_id: 103, quantity_used: 100 },
-  { id: 207, product_id: 3, ingredient_id: 108, quantity_used: 20 },
-  { id: 208, product_id: 4, ingredient_id: 104, quantity_used: 1 },
-  { id: 209, product_id: 4, ingredient_id: 103, quantity_used: 80 },
-  { id: 210, product_id: 4, ingredient_id: 105, quantity_used: 100 },
-  { id: 211, product_id: 4, ingredient_id: 108, quantity_used: 30 },
-  { id: 212, product_id: 5, ingredient_id: 105, quantity_used: 200 },
+  { id: 201, productId: 1, ingredientId: 107, qty: 1 },
+  { id: 202, productId: 1, ingredientId: 101, qty: 150 },
+  { id: 203, productId: 1, ingredientId: 106, qty: 20 },
+  { id: 204, productId: 2, ingredientId: 102, qty: 1 },
+  { id: 205, productId: 2, ingredientId: 106, qty: 100 },
+  { id: 206, productId: 3, ingredientId: 103, qty: 100 },
+  { id: 207, productId: 3, ingredientId: 108, qty: 20 },
+  { id: 208, productId: 4, ingredientId: 104, qty: 1 },
+  { id: 209, productId: 4, ingredientId: 103, qty: 80 },
+  { id: 210, productId: 4, ingredientId: 105, qty: 100 },
+  { id: 211, productId: 4, ingredientId: 108, qty: 30 },
+  { id: 212, productId: 5, ingredientId: 105, qty: 200 },
 ];
 
 const getArabicDate = () => {
-  const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+  const days = ['Ïº┘äÏúÏ¡Ï»','Ïº┘äÏÑÏ½┘å┘è┘å','Ïº┘äÏ½┘äÏºÏ½ÏºÏí','Ïº┘äÏúÏ▒Ï¿Ï╣ÏºÏí','Ïº┘äÏ«┘à┘èÏ│','Ïº┘äÏ¼┘àÏ╣Ï®','Ïº┘äÏ│Ï¿Ï¬'];
+  const months = ['┘è┘åÏº┘èÏ▒','┘üÏ¿Ï▒Ïº┘èÏ▒','┘àÏºÏ▒Ï│','ÏúÏ¿Ï▒┘è┘ä','┘àÏº┘è┘ê','┘è┘ê┘å┘è┘ê','┘è┘ê┘ä┘è┘ê','ÏúÏ║Ï│ÏÀÏ│','Ï│Ï¿Ï¬┘àÏ¿Ï▒','Ïú┘âÏ¬┘êÏ¿Ï▒','┘å┘ê┘ü┘àÏ¿Ï▒','Ï»┘èÏ│┘àÏ¿Ï▒'];
   const d = new Date();
-  return `${days[d.getDay()]}، ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  return `${days[d.getDay()]}Ïî ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-const arabicDays = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+const arabicDays = ['Ïº┘äÏ│Ï¿Ï¬','Ïº┘äÏúÏ¡Ï»','Ïº┘äÏÑÏ½┘å┘è┘å','Ïº┘äÏ½┘äÏºÏ½ÏºÏí','Ïº┘äÏúÏ▒Ï¿Ï╣ÏºÏí','Ïº┘äÏ«┘à┘èÏ│','Ïº┘äÏ¼┘àÏ╣Ï®'];
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    MAIN APP
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 export default function App() {
   const [activeTab, setActiveTab] = useState(0);
   const [products, setProducts] = useLocalStorage('pos_products', initialProducts);
@@ -370,11 +367,11 @@ export default function App() {
   const [stockEntries, setStockEntries] = useLocalStorage('pos_stock_entries', []);
   const [ownerTookLog, setOwnerTookLog] = useLocalStorage('pos_owner_took_log', []);
   const [productRecipes, setProductRecipes] = useLocalStorage('pos_product_recipes', initialProductRecipes);
-  const [settings] = useLocalStorage('pos_settings', { shopName: 'متجري' });
+  const [settings] = useLocalStorage('pos_settings', { shopName: '┘àÏ¬Ï¼Ï▒┘è' });
   const [allPurchases, setAllPurchases] = useLocalStorage('pos_allPurchases', [
-    { id: 100, productId: 1, productName: 'عصير برتقال', emoji: '🥤', qty: 24, unitPrice: 18, total: 432, date: 'أمس' },
-    { id: 101, productId: 2, productName: 'ماء 0.5L', emoji: '💧', qty: 48, unitPrice: 5, total: 240, date: 'الاثنين' },
-    { id: 102, productId: 4, productName: 'شيبس', emoji: '🍟', qty: 30, unitPrice: 15, total: 450, date: 'السبت' },
+    { id: 100, productId: 1, productName: 'Ï╣ÏÁ┘èÏ▒ Ï¿Ï▒Ï¬┘éÏº┘ä', emoji: '­ƒÑñ', qty: 24, unitPrice: 18, total: 432, date: 'Ïú┘àÏ│' },
+    { id: 101, productId: 2, productName: '┘àÏºÏí 0.5L', emoji: '­ƒÆº', qty: 48, unitPrice: 5, total: 240, date: 'Ïº┘äÏºÏ½┘å┘è┘å' },
+    { id: 102, productId: 4, productName: 'Ï┤┘èÏ¿Ï│', emoji: '­ƒìƒ', qty: 30, unitPrice: 15, total: 450, date: 'Ïº┘äÏ│Ï¿Ï¬' },
   ]);
   const [dayRecord, setDayRecord] = useLocalStorage('pos_dayRecord', {
     date: new Date().toISOString().split('T')[0],
@@ -385,13 +382,13 @@ export default function App() {
     isClosed: false,
   });
   const [pastDays, setPastDays] = useLocalStorage('pos_pastDays', []);
-
+  
   const [closeStep, setCloseStep] = useState(1);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [reportView, setReportView] = useState('overview');
   const [successMsg, setSuccessMsg] = useState('');
-
+  const [showCloseDay, setShowCloseDay] = useState(false);
   const [detailProductId, setDetailProductId] = useState(null);
   const [showProductsList, setShowProductsList] = useState(false);
   const [morePage, setMorePage] = useState(null);
@@ -443,7 +440,7 @@ export default function App() {
   const stockValue = useMemo(() =>
     products.reduce((s, p) => s + p.qty * p.buyPrice, 0), [products]);
 
-  const lowStockCount = useMemo(() =>
+  const lowStockCount = useMemo(() => 
     products.filter(p => p.is_active && p.qty <= p.minAlert).length, [products]);
 
   // Sale handler
@@ -480,15 +477,15 @@ export default function App() {
     }
     setProducts(updatedProducts);
     setTodaySales(prev => [...prev, ...salesRecords]);
-
+    
     setCart([]);
-    showSuccess('تمت عملية البيع بنجاح ✓');
+    showSuccess('Ï¬┘àÏ¬ Ï╣┘à┘ä┘èÏ® Ïº┘äÏ¿┘èÏ╣ Ï¿┘åÏ¼ÏºÏ¡ Ô£ô');
   }, [cart, products, productRecipes, setIngredients]);
 
   // Purchase handler
   const handlePurchase = useCallback((supplier, items, totalAmount) => {
     if (!items || items.length === 0) return null;
-
+    
     // Add purchased quantities to each ingredient's starting stock
     setIngredients(prev => prev.map(ing => {
       const purchasedItem = items.find(i => i.productId === ing.id);
@@ -497,24 +494,57 @@ export default function App() {
       }
       return ing;
     }));
-
+    
     const d = new Date();
     const timeString = d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-
+    
     const record = {
       id: Date.now(),
-      date: `${getArabicDate().split('،')[0]} ${d.getDate()} ${['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'][d.getMonth()]} — ${timeString}`,
-      supplier: supplier || 'غير محدد',
+      date: `${getArabicDate().split('Ïî')[0]} ${d.getDate()} ${['┘è┘åÏº┘èÏ▒','┘üÏ¿Ï▒Ïº┘èÏ▒','┘àÏºÏ▒Ï│','ÏúÏ¿Ï▒┘è┘ä','┘àÏº┘è┘ê','┘è┘ê┘å┘è┘ê','┘è┘ê┘ä┘è┘ê','ÏúÏ║Ï│ÏÀÏ│','Ï│Ï¿Ï¬┘àÏ¿Ï▒','Ïú┘âÏ¬┘êÏ¿Ï▒','┘å┘ê┘ü┘àÏ¿Ï▒','Ï»┘èÏ│┘àÏ¿Ï▒'][d.getMonth()]} ÔÇö ${timeString}`,
+      supplier: supplier || 'Ï║┘èÏ▒ ┘àÏ¡Ï»Ï»',
       items: items,
       total: totalAmount,
     };
-
+    
     setTodayPurchases(prev => [...prev, record]);
     setAllPurchases(prev => [record, ...prev]);
-    showSuccess('تم حفظ المشتريات بنجاح ✓');
+    showSuccess('Ï¬┘à Ï¡┘üÏ© Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬ Ï¿┘åÏ¼ÏºÏ¡ Ô£ô');
     return record;
   }, []);
 
+  // Close day handler: Save to past days and RESET today's arrays
+  const handleCloseDay = useCallback(() => {
+    const closingQty = {};
+    products.forEach(p => { closingQty[p.id] = p.qty; });
+    
+    const finalDayRecord = {
+      ...dayRecord,
+      sales: todaySales,
+      purchases: todayPurchases,
+      closingQty,
+      isClosed: true,
+      closedAt: new Date().toISOString(),
+    };
+    
+    // Save to historical days
+    setPastDays(prev => [finalDayRecord, ...prev]);
+    
+    // Reset app for the new day
+    setTodaySales([]);
+    setTodayPurchases([]);
+    setCart([]);
+    setDayRecord({
+      date: new Date().toISOString().split('T')[0],
+      openingQty: closingQty,
+      sales: [],
+      purchases: [],
+      closingQty: {},
+      isClosed: false,
+    });
+    
+    setShowCloseDay(false);
+    showSuccess('Ï¬┘à ÏÑÏ║┘äÏº┘é Ïº┘ä┘è┘ê┘à ┘êÏ¿Ï»Ïí ┘è┘ê┘à Ï¼Ï»┘èÏ» Ô£ô');
+  }, [products, todaySales, todayPurchases, dayRecord]);
 
   // Product CRUD
   const handleSaveProduct = useCallback((productData) => {
@@ -526,21 +556,21 @@ export default function App() {
     }
     setShowProductForm(false);
     setEditingProduct(null);
-    showSuccess(editingProduct ? 'تم حفظ التغييرات ✓' : 'تم إضافة المنتج ✓');
+    showSuccess(editingProduct ? 'Ï¬┘à Ï¡┘üÏ© Ïº┘äÏ¬Ï║┘è┘èÏ▒ÏºÏ¬ Ô£ô' : 'Ï¬┘à ÏÑÏÂÏº┘üÏ® Ïº┘ä┘à┘åÏ¬Ï¼ Ô£ô');
   }, [editingProduct, products]);
 
   const handleDeleteProduct = useCallback((id) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, is_active: false } : p));
     setShowProductForm(false);
     setEditingProduct(null);
-    showSuccess('تم تعطيل المنتج ✓');
+    showSuccess('Ï¬┘à Ï¬Ï╣ÏÀ┘è┘ä Ïº┘ä┘à┘åÏ¬Ï¼ Ô£ô');
   }, []);
 
   const handleRestoreProduct = useCallback((id) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, is_active: true } : p));
     setShowProductForm(false);
     setEditingProduct(null);
-    showSuccess('تم تفعيل المنتج ✓');
+    showSuccess('Ï¬┘à Ï¬┘üÏ╣┘è┘ä Ïº┘ä┘à┘åÏ¬Ï¼ Ô£ô');
   }, []);
 
   const handleToggleProduct = useCallback((id) => {
@@ -586,17 +616,17 @@ export default function App() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    showSuccess('تم تحميل نسخة احتياطية ✓');
+    showSuccess('Ï¬┘à Ï¬Ï¡┘à┘è┘ä ┘åÏ│Ï«Ï® ÏºÏ¡Ï¬┘èÏºÏÀ┘èÏ® Ô£ô');
   };
 
   // WhatsApp Share Feature
   const handleWhatsAppShare = () => {
-    const text = `📊 *تقرير المبيعات - ${getArabicDate()}* 📊\n\n` +
-      `💰 إجمالي المبيعات: ${fmt(todaySalesTotal)} DA\n` +
-      `🛒 إجمالي المشتريات: ${fmt(todayPurchasesTotal)} DA\n` +
-      `📈 صافي الربح: ${fmt(todayProfit)} DA\n\n` +
-      `📦 عمليات البيع اليوم: ${todaySales.length} مرة\n` +
-      `*تطبيق إدارة الأعمال*`;
+    const text = `­ƒôè *Ï¬┘éÏ▒┘èÏ▒ Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬ - ${getArabicDate()}* ­ƒôè\n\n` +
+      `­ƒÆ░ ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬: ${fmt(todaySalesTotal)} DA\n` +
+      `­ƒøÆ ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬: ${fmt(todayPurchasesTotal)} DA\n` +
+      `­ƒôê ÏÁÏº┘ü┘è Ïº┘äÏ▒Ï¿Ï¡: ${fmt(todayProfit)} DA\n\n` +
+      `­ƒôª Ï╣┘à┘ä┘èÏºÏ¬ Ïº┘äÏ¿┘èÏ╣ Ïº┘ä┘è┘ê┘à: ${todaySales.length} ┘àÏ▒Ï®\n` +
+      `*Ï¬ÏÀÏ¿┘è┘é ÏÑÏ»ÏºÏ▒Ï® Ïº┘äÏúÏ╣┘àÏº┘ä*`;
     const encoded = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
   };
@@ -629,7 +659,7 @@ export default function App() {
       />;
     }
 
-    if (morePage === 'الديون') {
+    if (morePage === 'Ïº┘äÏ»┘è┘ê┘å') {
       return <DebtsScreen
         debts={debts}
         setDebts={setDebts}
@@ -639,7 +669,7 @@ export default function App() {
         onBack={() => setMorePage(null)}
       />;
     }
-    if (morePage === 'المصاريف') {
+    if (morePage === 'Ïº┘ä┘àÏÁÏºÏ▒┘è┘ü') {
       return <ExpensesScreen
         expenses={expenses}
         cyclicExpenses={cyclicExpenses}
@@ -649,65 +679,55 @@ export default function App() {
         onBack={() => setMorePage(null)}
       />;
     }
-    if (morePage === 'العملاء' || clientDetailId) {
+    if (morePage === 'Ïº┘äÏ╣┘à┘äÏºÏí' || clientDetailId) {
       if (clientDetailId) {
         const client = clients.find(c => c.id === clientDetailId);
         if (client) {
           return <ClientDetailScreen
             client={client}
-            setClients={setClients}
-            debts={debts}
-            setDebts={setDebts}
-            expenses={expenses}
-            todaySales={todaySales}
-            products={products}
-            showSuccess={showSuccess}
-            onBack={() => setClientDetailId(null)}
-          />;
-        }
-      }
-      return <ClientsScreen
-        clients={clients}
-        setClients={setClients}
-        debts={debts}
-        todaySales={todaySales}
-        products={products}
-        showSuccess={showSuccess}
-        onBack={() => setMorePage(null)}
-        onOpenClient={(id) => setClientDetailId(id)}
+        setStep={setCloseStep}
+        todaySalesTotal={todaySalesTotal}
+        todayPurchasesTotal={todayPurchasesTotal}
+        stockValue={stockValue}
+        onClose={handleCloseDay}
+        onBack={() => setShowCloseDay(false)}
       />;
     }
-
-
-    switch (activeTab) {
-      case 0: return <SellScreen
-        products={products}
-        categories={categories}
-        cart={cart}
-        setCart={setCart}
-        onSell={handleSell}
-      />;
+    switch(activeTab) {
+      case 0: return <SellScreen products={products} categories={categories} cart={cart} setCart={setCart} onSell={handleSell} />;
       case 1: return <StockScreen
         ingredients={ingredients}
         setIngredients={setIngredients}
+        stockSessions={stockSessions}
+        setStockSessions={setStockSessions}
+        stockEntries={stockEntries}
+        setStockEntries={setStockEntries}
+        ownerTookLog={ownerTookLog}
+        setOwnerTookLog={setOwnerTookLog}
+        setProductRecipes={setProductRecipes}
         showSuccess={showSuccess}
+        onOpenProducts={() => setActiveTab(3)}
       />;
       case 2: return <PurchaseScreen
-        products={products}
-        categories={categories}
+        products={ingredients.map(ing => ({ id: ing.id, name: ing.name, buyPrice: Number(ing.cost_per_unit) || 0, emoji: ing.emoji || '­ƒôª', unit: ing.unit }))}
+        categories={[]}
         onPurchase={handlePurchase}
         suppliers={suppliers}
-        setSuppliers={setSuppliers}
-        allPurchases={allPurchases}
-        debts={debts}
-        setDebts={setDebts}
-        showSuccess={showSuccess}
-        onShowReceipt={setLastReceipt}
+            timeText: record.date.split(' ÔÇö ')[1] || d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+            items: items.map(it => ({
+              name: it.productName,
+              qty: it.qty,
+              price: it.costPerUnit || (it.subtotal / (it.qty || 1)),
+              total: it.subtotal
+            })),
+            total: record.total,
+            paymentMethod: record.supplier && record.supplier !== 'Ï║┘èÏ▒ ┘àÏ¡Ï»Ï»' ? `ÏóÏ¼┘ä / ${record.supplier}` : '┘âÏºÏ┤ (┘å┘éÏ»Ïº┘ï)'
+          });
+        }}
       />;
       case 3: return <InventoryScreen
         products={products}
         categories={categories}
-        todaySales={todaySales}
         onAddCategory={handleAddCategory}
         onRenameCategory={handleRenameCategory}
         onDeleteCategory={handleDeleteCategory}
@@ -729,10 +749,10 @@ export default function App() {
         ingredients={ingredients}
         cyclicExpenses={cyclicExpenses}
         onShowDetails={() => setReportView('details')}
+        onShowCloseDay={() => setShowCloseDay(true)}
         onExport={handleExportData}
         onShare={handleWhatsAppShare}
         onOpenProduct={(p) => setDetailProductId(p.id)}
-        onBack={() => setActiveTab(4)}
       />;
       default: return null;
     }
@@ -752,27 +772,27 @@ export default function App() {
       {lastReceipt && (
         <ReceiptModal
           receipt={lastReceipt}
-          shopName={settings?.shopName || 'متجري'}
+          shopName={settings?.shopName || '┘àÏ¬Ï¼Ï▒┘è'}
           onClose={() => setLastReceipt(null)}
         />
       )}
-      {!showProductForm && reportView !== 'details' && !detailProductId && !morePage && !clientDetailId && (
+      {!showProductForm && reportView !== 'details' && !showCloseDay && !detailProductId && !morePage && !clientDetailId && (
         <BottomNav activeTab={activeTab} setActiveTab={(i) => { setMorePage(null); setShowProductsList(false); setActiveTab(i); }} lowStockCount={lowStockCount} />
       )}
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    BOTTOM NAV
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function BottomNav({ activeTab, setActiveTab, lowStockCount }) {
   const tabs = [
-    { icon: ShoppingCart, label: 'البيع' },
-    { icon: Package, label: 'المخزون', badge: lowStockCount },
-    { icon: ShoppingBag, label: 'الشراء' },
-    { icon: Tags, label: 'المنتجات' },
-    { icon: LayoutGrid, label: 'المزيد' },
+    { icon: ShoppingCart, label: 'Ïº┘äÏ¿┘èÏ╣' },
+    { icon: Package, label: 'Ïº┘ä┘àÏ«Ï▓┘ê┘å', badge: lowStockCount },
+    { icon: ShoppingBag, label: 'Ïº┘äÏ┤Ï▒ÏºÏí' },
+    { icon: Tags, label: 'Ïº┘ä┘à┘åÏ¬Ï¼ÏºÏ¬' },
+    { icon: LayoutGrid, label: 'Ïº┘ä┘àÏ▓┘èÏ»' },
   ];
 
   return (
@@ -812,9 +832,9 @@ function BottomNav({ activeTab, setActiveTab, lowStockCount }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   SCREEN 1: SELL (البيع)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN 1: SELL (Ïº┘äÏ¿┘èÏ╣)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function HeaderIconButton({ onClick, children, label, badge }) {
   return (
     <button
@@ -927,7 +947,7 @@ function CategoryManagerSheet({ open, categories, products, selectedFilter, onSe
           <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <X size={18} color={C.dark} />
           </button>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>الفئات</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>Ïº┘ä┘üÏªÏºÏ¬</h2>
           <div style={{ width: 36 }} />
         </div>
 
@@ -943,8 +963,8 @@ function CategoryManagerSheet({ open, categories, products, selectedFilter, onSe
                 <div key={category} style={{ padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
                   <input value={draft} onChange={event => setDraft(event.target.value)} autoFocus style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, textAlign: 'right', direction: 'rtl', boxSizing: 'border-box', marginBottom: 8 }} />
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={submit} style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>حفظ</button>
-                    <button onClick={() => { setMode('list'); setEditingCategory(null); }} style={{ flex: 1, padding: '10px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+                    <button onClick={submit} style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>Ï¡┘üÏ©</button>
+                    <button onClick={() => { setMode('list'); setEditingCategory(null); }} style={{ flex: 1, padding: '10px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontWeight: 800, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
                   </div>
                 </div>
               );
@@ -954,7 +974,7 @@ function CategoryManagerSheet({ open, categories, products, selectedFilter, onSe
               <div key={category} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
                 <button onClick={() => { onSelectCategory(category); onClose(); }} style={{ flex: 1, border: active ? `1.5px solid ${C.blue}` : `1px solid ${C.border}`, background: active ? '#EFF6FF' : '#fff', borderRadius: 14, padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', direction: 'rtl' }}>
                   <span style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>{category}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: C.gray }}>{count} منتج</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: C.gray }}>{count} ┘à┘åÏ¬Ï¼</span>
                 </button>
                 <button onClick={() => { setMode('edit'); setDraft(category); setEditingCategory(category); }} style={{ width: 40, height: 40, borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   <Pencil size={16} color={C.dark} />
@@ -970,14 +990,14 @@ function CategoryManagerSheet({ open, categories, products, selectedFilter, onSe
 
           {mode === 'add' ? (
             <div style={{ paddingTop: 14 }}>
-              <input value={draft} onChange={event => setDraft(event.target.value)} autoFocus placeholder="اسم الفئة" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, textAlign: 'right', direction: 'rtl', boxSizing: 'border-box', marginBottom: 8 }} />
+              <input value={draft} onChange={event => setDraft(event.target.value)} autoFocus placeholder="ÏºÏ│┘à Ïº┘ä┘üÏªÏ®" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, textAlign: 'right', direction: 'rtl', boxSizing: 'border-box', marginBottom: 8 }} />
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={submit} style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>حفظ</button>
-                <button onClick={() => setMode('list')} style={{ flex: 1, padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+                <button onClick={submit} style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>Ï¡┘üÏ©</button>
+                <button onClick={() => setMode('list')} style={{ flex: 1, padding: '12px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontWeight: 800, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
               </div>
             </div>
           ) : (
-            <button onClick={() => { setMode('add'); setDraft(''); setEditingCategory(null); }} style={{ width: '100%', marginTop: 14, padding: '14px', borderRadius: 14, border: 'none', background: C.dark, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>إضافة فئة جديدة +</button>
+            <button onClick={() => { setMode('add'); setDraft(''); setEditingCategory(null); }} style={{ width: '100%', marginTop: 14, padding: '14px', borderRadius: 14, border: 'none', background: C.dark, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>ÏÑÏÂÏº┘üÏ® ┘üÏªÏ® Ï¼Ï»┘èÏ»Ï® +</button>
           )}
         </div>
       </div>
@@ -1017,13 +1037,13 @@ function CartDetailsSheet({ open, cart, products, setCart, onSell, onClose }) {
           <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <X size={18} color={C.dark} />
           </button>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>السلة</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>Ïº┘äÏ│┘äÏ®</h2>
           <div style={{ width: 36 }} />
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
           {items.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>السلة فارغة</div>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>Ïº┘äÏ│┘äÏ® ┘üÏºÏ▒Ï║Ï®</div>
           ) : items.map(item => (
             <div key={item.productId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
               <button onClick={() => updateQty(item.productId, 0)} style={{ width: 34, height: 34, borderRadius: 10, border: 'none', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
@@ -1049,10 +1069,10 @@ function CartDetailsSheet({ open, cart, products, setCart, onSell, onClose }) {
         <div style={{ padding: '14px 16px 22px', borderTop: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <span style={{ fontSize: 22, fontWeight: 900, color: C.blue }}>{fmt(total)} <span style={{ fontSize: 13 }}>DA</span></span>
-            <span style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>الإجمالي</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>Ïº┘äÏÑÏ¼┘àÏº┘ä┘è</span>
           </div>
           <button onClick={completeSale} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: C.green, color: '#fff', fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' }}>
-            <Check size={20} /> بيع
+            <Check size={20} /> Ï¿┘èÏ╣
           </button>
         </div>
       </div>
@@ -1081,8 +1101,8 @@ function ReportsDrawer({ open, onClose, products, todaySales, debts }) {
     const phone = String(debt.phone || debt.whatsapp || debt.mobile || '').replace(/[^\d+]/g, '');
     if (!phone) return;
     const amount = Number(debt.amount ?? debt.total ?? debt.balance ?? 0);
-    const name = debt.customerName || debt.customer || debt.name || 'زبون';
-    const text = encodeURIComponent(`سلام ${name}، المبلغ المتبقي هو ${fmt(amount)} DA`);
+    const name = debt.customerName || debt.customer || debt.name || 'Ï▓Ï¿┘ê┘å';
+    const text = encodeURIComponent(`Ï│┘äÏº┘à ${name}Ïî Ïº┘ä┘àÏ¿┘äÏ║ Ïº┘ä┘àÏ¬Ï¿┘é┘è ┘ç┘ê ${fmt(amount)} DA`);
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
   };
 
@@ -1094,13 +1114,13 @@ function ReportsDrawer({ open, onClose, products, todaySales, debts }) {
           <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <X size={18} color={C.dark} />
           </button>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>تفاصيل اليوم</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>Ï¬┘üÏºÏÁ┘è┘ä Ïº┘ä┘è┘ê┘à</h2>
         </div>
 
         <div style={{ display: 'flex', gap: 8, padding: '12px 16px', borderBottom: `1px solid ${C.border}` }}>
           {[
-            { id: 'sales', label: 'المبيعات اليوم' },
-            { id: 'debts', label: 'شحال يسالوك' },
+            { id: 'sales', label: 'Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬ Ïº┘ä┘è┘ê┘à' },
+            { id: 'debts', label: 'Ï┤Ï¡Ïº┘ä ┘èÏ│Ïº┘ä┘ê┘â' },
           ].map(tab => {
             const active = activeTab === tab.id;
             return (
@@ -1113,15 +1133,15 @@ function ReportsDrawer({ open, onClose, products, todaySales, debts }) {
           {activeTab === 'sales' ? (
             <>
               {todaySales.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>لا توجد مبيعات اليوم</div>
+                <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>┘äÏº Ï¬┘êÏ¼Ï» ┘àÏ¿┘èÏ╣ÏºÏ¬ Ïº┘ä┘è┘ê┘à</div>
               ) : todaySales.map((sale, index) => {
-                const product = products.find(p => p.id === sale.productId) || { id: sale.productId || index, name: sale.productName || 'منتج', emoji: sale.emoji || '📦', image: sale.image || '', category: sale.category || 'أخرى' };
+                const product = products.find(p => p.id === sale.productId) || { id: sale.productId || index, name: sale.productName || '┘à┘åÏ¬Ï¼', emoji: sale.emoji || '­ƒôª', image: sale.image || '', category: sale.category || 'ÏúÏ«Ï▒┘ë' };
                 return (
                   <div key={`${sale.productId}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
                     <ProductEntity product={product} variant="tiny" />
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: C.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</div>
-                      <div style={{ fontSize: 12, color: C.gray, marginTop: 3 }}>× {sale.qty}</div>
+                      <div style={{ fontSize: 12, color: C.gray, marginTop: 3 }}>├ù {sale.qty}</div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 900, color: C.blue }}>{fmt(sale.total)} DA</div>
                   </div>
@@ -1130,25 +1150,25 @@ function ReportsDrawer({ open, onClose, products, todaySales, debts }) {
               {todaySales.length > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 16, fontSize: 17, fontWeight: 900 }}>
                   <span style={{ color: C.blue }}>{fmt(salesTotal)} DA</span>
-                  <span style={{ color: C.dark }}>الإجمالي:</span>
+                  <span style={{ color: C.dark }}>Ïº┘äÏÑÏ¼┘àÏº┘ä┘è:</span>
                 </div>
               )}
             </>
           ) : (
             <>
-              <div style={{ color: C.red, fontSize: 17, fontWeight: 900, padding: '10px 0 14px', textAlign: 'right' }}>إجمالي الديون: {fmt(debtsTotal)} DA</div>
+              <div style={{ color: C.red, fontSize: 17, fontWeight: 900, padding: '10px 0 14px', textAlign: 'right' }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘äÏ»┘è┘ê┘å: {fmt(debtsTotal)} DA</div>
               {pendingDebts.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>لا توجد ديون حالياً</div>
+                <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>┘äÏº Ï¬┘êÏ¼Ï» Ï»┘è┘ê┘å Ï¡Ïº┘ä┘èÏº┘ï</div>
               ) : pendingDebts.map((debt, index) => {
                 const amount = Number(debt.amount ?? debt.total ?? debt.balance ?? 0);
-                const name = debt.customerName || debt.customer || debt.name || 'زبون';
+                const name = debt.customerName || debt.customer || debt.name || 'Ï▓Ï¿┘ê┘å';
                 const phone = debt.phone || debt.whatsapp || debt.mobile;
                 return (
                   <div key={debt.id || index} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
                     {phone && <button onClick={() => openWhatsApp(debt)} style={{ width: 38, height: 38, borderRadius: 12, border: 'none', background: '#DCFCE7', color: C.green, fontSize: 12, fontWeight: 900, cursor: 'pointer' }}>WA</button>}
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
                       <div style={{ fontSize: 14, fontWeight: 900, color: C.dark }}>{name}</div>
-                      <div style={{ fontSize: 12, color: C.gray, marginTop: 3 }}>منذ {getDaysAgo(debt.date || debt.createdAt || debt.created_at)} أيام</div>
+                      <div style={{ fontSize: 12, color: C.gray, marginTop: 3 }}>┘à┘åÏ░ {getDaysAgo(debt.date || debt.createdAt || debt.created_at)} Ïú┘èÏº┘à</div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 900, color: C.red }}>{fmt(amount)} DA</div>
                   </div>
@@ -1164,7 +1184,7 @@ function ReportsDrawer({ open, onClose, products, todaySales, debts }) {
 
 function SellScreen({ products, categories, cart, setCart, onSell }) {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('الكل');
+  const [category, setCategory] = useState('Ïº┘ä┘â┘ä');
   const [showCartSheet, setShowCartSheet] = useState(false);
   const [lastAddedProduct, setLastAddedProduct] = useState(null);
   const [showUndo, setShowUndo] = useState(false);
@@ -1227,9 +1247,9 @@ function SellScreen({ products, categories, cart, setCart, onSell }) {
   return (
     <div>
       <AppHeader
-        title="البيع"
+        title="Ïº┘äÏ¿┘èÏ╣"
         right={(
-          <HeaderIconButton label="السلة" badge={cartCount} onClick={() => setShowCartSheet(true)}>
+          <HeaderIconButton label="Ïº┘äÏ│┘äÏ®" badge={cartCount} onClick={() => setShowCartSheet(true)}>
             <ShoppingCart size={24} color={C.dark} />
           </HeaderIconButton>
         )}
@@ -1238,7 +1258,7 @@ function SellScreen({ products, categories, cart, setCart, onSell }) {
       <div style={{ padding: '8px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 12, padding: '10px 14px', border: `1px solid ${C.border}` }}>
           <Search size={18} color={C.gray} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث عن منتج..." style={{ border: 'none', outline: 'none', flex: 1, fontSize: 14, background: 'transparent', textAlign: 'right', direction: 'rtl' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ÏºÏ¿Ï¡Ï½ Ï╣┘å ┘à┘åÏ¬Ï¼..." style={{ border: 'none', outline: 'none', flex: 1, fontSize: 14, background: 'transparent', textAlign: 'right', direction: 'rtl' }} />
         </div>
       </div>
 
@@ -1259,10 +1279,10 @@ function SellScreen({ products, categories, cart, setCart, onSell }) {
 
       {cart.length > 0 && (
         <div onClick={() => setShowCartSheet(true)} style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderTop: `1px solid ${C.border}`, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 90, cursor: 'pointer' }}>
-          <span style={{ fontSize: 13, color: C.gray }}>{cart.length} منتجات</span>
+          <span style={{ fontSize: 13, color: C.gray }}>{cart.length} ┘à┘åÏ¬Ï¼ÏºÏ¬</span>
           <span style={{ fontSize: 22, fontWeight: 800, color: C.blue }}>{fmt(cartTotal)} <span style={{ fontSize: 14 }}>DA</span></span>
           <button onClick={(event) => { event.stopPropagation(); onSell(); }} style={{ background: C.green, color: '#fff', border: 'none', borderRadius: 12, padding: '10px 24px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Check size={18} /> بيع
+            <Check size={18} /> Ï¿┘èÏ╣
           </button>
         </div>
       )}
@@ -1298,10 +1318,10 @@ function SellScreen({ products, categories, cart, setCart, onSell }) {
             alignItems: 'center',
             gap: 4
           }}>
-            <RotateCcw size={14} /> تراجع
+            <RotateCcw size={14} /> Ï¬Ï▒ÏºÏ¼Ï╣
           </button>
           <span style={{ fontSize: 13, fontWeight: 700 }}>
-            تمت إضافة {lastAddedProduct.emoji} {lastAddedProduct.name}
+            Ï¬┘àÏ¬ ÏÑÏÂÏº┘üÏ® {lastAddedProduct.emoji} {lastAddedProduct.name}
           </span>
         </div>
       )}
@@ -1318,10 +1338,10 @@ function SellScreen({ products, categories, cart, setCart, onSell }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   SCREEN 2: INVENTORY (المخزون)
-   ═══════════════════════════════════════════ */
-function InventoryScreen({ products, categories, todaySales = [], onAddCategory, onRenameCategory, onDeleteCategory, onAddProduct, onEditProduct }) {
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN 2: INVENTORY (Ïº┘ä┘àÏ«Ï▓┘ê┘å)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+function InventoryScreen({ products, categories, onAddCategory, onRenameCategory, onDeleteCategory, onAddProduct, onEditProduct }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState(ALL_FILTER);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
@@ -1334,21 +1354,18 @@ function InventoryScreen({ products, categories, todaySales = [], onAddCategory,
   }), [activeProducts]);
 
   const filtered = useMemo(() => {
-    let list = filter === 'المعطلة' ? products.filter(p => !p.is_active) : [...activeProducts];
+    let list = filter === 'Ïº┘ä┘àÏ╣ÏÀ┘äÏ®' ? products.filter(p => !p.is_active) : [...activeProducts];
     if (search) list = list.filter(p => p.name.includes(search));
-    if (filter === 'منخفضة المخزون') list = list.filter(p => p.qty > 0 && p.qty <= p.minAlert);
+    if (filter === '┘à┘åÏ«┘üÏÂÏ® Ïº┘ä┘àÏ«Ï▓┘ê┘å') list = list.filter(p => p.qty > 0 && p.qty <= p.minAlert);
     else if (isCategoryFilter(filter)) list = list.filter(p => p.category === categoryFromFilter(filter));
-    return list.map(p => {
-      const soldToday = todaySales.filter(s => s.productId === p.id).reduce((sum, s) => sum + s.qty, 0);
-      return { ...p, soldToday };
-    });
-  }, [products, activeProducts, search, filter, todaySales]);
+    return list;
+  }, [products, activeProducts, search, filter]);
 
   const filters = useMemo(() => [
     { label: ALL_FILTER, value: ALL_FILTER },
-    { label: 'الأكثر مبيعاً', value: 'الأكثر مبيعاً' },
-    { label: 'منخفضة المخزون', value: 'منخفضة المخزون' },
-    { label: 'المعطلة', value: 'المعطلة' },
+    { label: 'Ïº┘äÏú┘âÏ½Ï▒ ┘àÏ¿┘èÏ╣Ïº┘ï', value: 'Ïº┘äÏú┘âÏ½Ï▒ ┘àÏ¿┘èÏ╣Ïº┘ï' },
+    { label: '┘à┘åÏ«┘üÏÂÏ® Ïº┘ä┘àÏ«Ï▓┘ê┘å', value: '┘à┘åÏ«┘üÏÂÏ® Ïº┘ä┘àÏ«Ï▓┘ê┘å' },
+    { label: 'Ïº┘ä┘àÏ╣ÏÀ┘äÏ®', value: 'Ïº┘ä┘àÏ╣ÏÀ┘äÏ®' },
     ...categories.map(category => ({ label: category, value: getCategoryFilter(category) })),
     { label: MANAGE_CATEGORIES_LABEL, value: MANAGE_CATEGORIES_LABEL },
   ], [categories]);
@@ -1358,16 +1375,16 @@ function InventoryScreen({ products, categories, todaySales = [], onAddCategory,
   return (
     <div>
       <AppHeader
-        title="المنتجات"
-        left={<HeaderIconButton label="القائمة"><Menu size={22} color={C.dark} /></HeaderIconButton>}
-        right={<HeaderIconButton label="تنبيهات المخزون" badge={stats.low}><Bell size={22} color={C.dark} /></HeaderIconButton>}
+        title="Ïº┘ä┘à┘åÏ¬Ï¼ÏºÏ¬"
+        left={<HeaderIconButton label="Ïº┘ä┘éÏºÏª┘àÏ®"><Menu size={22} color={C.dark} /></HeaderIconButton>}
+        right={<HeaderIconButton label="Ï¬┘åÏ¿┘è┘çÏºÏ¬ Ïº┘ä┘àÏ«Ï▓┘ê┘å" badge={stats.low}><Bell size={22} color={C.dark} /></HeaderIconButton>}
       />
 
       <div style={{ display: 'flex', overflowX: 'auto', gap: 10, padding: '12px 16px', direction: 'rtl', scrollbarWidth: 'none' }}>
         {[
-          { label: 'إجمالي المنتجات', value: stats.total, sub: 'منتج', color: C.blue, icon: <img src="/imajes/icons/total-products.png" style={{ width: '80px', height: '80px', objectFit: 'contain' }} /> },
-          { label: 'منخفضة المخزون', value: stats.low, sub: 'منتج', color: C.orange, icon: <img src="/imajes/icons/low-stock.png" style={{ width: '80px', height: '80px', objectFit: 'contain' }} /> },
-          { label: 'قيمة المخزون', value: fmt(stats.value), sub: 'DA', color: C.green, icon: <img src="/imajes/icons/stock-value.png" style={{ width: '80px', height: '80px', objectFit: 'contain' }} /> },
+          { label: 'ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘à┘åÏ¬Ï¼ÏºÏ¬', value: stats.total, sub: '┘à┘åÏ¬Ï¼', color: C.blue, icon: <img src="/imajes/icons/total-products.png" style={{width:'80px', height:'80px', objectFit:'contain'}} /> },
+          { label: '┘à┘åÏ«┘üÏÂÏ® Ïº┘ä┘àÏ«Ï▓┘ê┘å', value: stats.low, sub: '┘à┘åÏ¬Ï¼', color: C.orange, icon: <img src="/imajes/icons/low-stock.png" style={{width:'80px', height:'80px', objectFit:'contain'}} /> },
+          { label: '┘é┘è┘àÏ® Ïº┘ä┘àÏ«Ï▓┘ê┘å', value: fmt(stats.value), sub: 'DA', color: C.green, icon: <img src="/imajes/icons/stock-value.png" style={{width:'80px', height:'80px', objectFit:'contain'}} /> },
         ].map((s, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: 14, padding: '12px 8px', minWidth: 110, flexShrink: 0, boxShadow: C.shadow, border: `1px solid ${C.border}`, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{s.icon}</div>
@@ -1383,7 +1400,7 @@ function InventoryScreen({ products, categories, todaySales = [], onAddCategory,
         ))}
       </div>
 
-      <button aria-label="إضافة منتج" onClick={onAddProduct} style={{ position: 'fixed', bottom: 90, right: 'calc(50% - 175px)', width: 52, height: 52, borderRadius: '50%', background: C.dark, color: '#fff', border: 'none', fontSize: 28, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
+      <button aria-label="ÏÑÏÂÏº┘üÏ® ┘à┘åÏ¬Ï¼" onClick={onAddProduct} style={{ position: 'fixed', bottom: 90, right: 'calc(50% - 175px)', width: 52, height: 52, borderRadius: '50%', background: C.dark, color: '#fff', border: 'none', fontSize: 28, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
         <Plus size={24} />
       </button>
 
@@ -1402,9 +1419,9 @@ function InventoryScreen({ products, categories, todaySales = [], onAddCategory,
   );
 }
 
-/* ═══════════════════════════════════════════
-   SCREEN 3: PURCHASE (الشراء) — 3-TAB DESIGN
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN 3: PURCHASE (Ïº┘äÏ┤Ï▒ÏºÏí) ÔÇö 3-TAB DESIGN
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppliers, allPurchases, debts, setDebts, showSuccess, onShowReceipt }) {
   const [activeTab, setActiveTab] = useState('supplier');
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
@@ -1446,7 +1463,7 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
     setShowAddSupplier(false);
     setNewSupplierName('');
     setNewSupplierPhone('');
-    showSuccess('تمت إضافة المورد ✓');
+    showSuccess('Ï¬┘àÏ¬ ÏÑÏÂÏº┘üÏ® Ïº┘ä┘à┘êÏ▒Ï» Ô£ô');
   };
 
   const handleProductSelect = (product) => {
@@ -1489,7 +1506,7 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
           amount: remaining,
           paid: 0,
           status: 'pending',
-          note: `دين مورد - فاتورة شراء`,
+          note: `Ï»┘è┘å ┘à┘êÏ▒Ï» - ┘üÏºÏ¬┘êÏ▒Ï® Ï┤Ï▒ÏºÏí`,
           date: new Date().toISOString(),
           type: 'supplier',
         }]);
@@ -1507,12 +1524,12 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
     return (
       <div style={{ paddingBottom: 100, minHeight: '100vh', background: C.bg }}>
         <AppHeader
-          title="كل المشتريات"
-          left={<HeaderIconButton label="رجوع" onClick={() => setShowFullHistory(false)}><ChevronLeft size={24} color={C.dark} /></HeaderIconButton>}
+          title="┘â┘ä Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬"
+          left={<HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={() => setShowFullHistory(false)}><ChevronLeft size={24} color={C.dark} /></HeaderIconButton>}
           border
         />
         <div style={{ padding: '16px' }}>
-          {allPurchases.length === 0 && <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>لا توجد مشتريات سابقة</div>}
+          {allPurchases.length === 0 && <div style={{ textAlign: 'center', padding: '40px 0', color: C.gray }}>┘äÏº Ï¬┘êÏ¼Ï» ┘àÏ┤Ï¬Ï▒┘èÏºÏ¬ Ï│ÏºÏ¿┘éÏ®</div>}
           {allPurchases.map((r, i) => {
             const isBulk = r.items && Array.isArray(r.items);
             const itemsCount = isBulk ? r.items.length : 1;
@@ -1527,11 +1544,11 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
                     </button>
                   </div>
                   <div style={{ flex: 1, padding: '0 12px', textAlign: 'right' }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{r.supplier || 'غير محدد'}</div>
-                    <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>{itemsCount} منتجات</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{r.supplier || 'Ï║┘èÏ▒ ┘àÏ¡Ï»Ï»'}</div>
+                    <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>{itemsCount} ┘à┘åÏ¬Ï¼ÏºÏ¬</div>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                    <span style={{ fontSize: 11, color: C.gray }}>{r.date || 'اليوم'}</span>
+                    <span style={{ fontSize: 11, color: C.gray }}>{r.date || 'Ïº┘ä┘è┘ê┘à'}</span>
                     {expanded ? <ChevronUp size={16} color={C.gray} /> : <ChevronDown size={16} color={C.gray} />}
                   </div>
                 </div>
@@ -1540,7 +1557,7 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
                     {r.items.map((item, idx) => (
                       <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
                         <span style={{ fontWeight: 700, color: C.dark }}>{fmt(item.subtotal)} DA</span>
-                        <span style={{ color: C.gray }}>{item.productName} × {item.qty}</span>
+                        <span style={{ color: C.gray }}>{item.productName} ├ù {item.qty}</span>
                       </div>
                     ))}
                   </div>
@@ -1556,25 +1573,25 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
   return (
     <div style={{ paddingBottom: 80, minHeight: '100vh', background: C.bg }}>
       <AppHeader
-        title="شراء جديد"
-        right={<HeaderIconButton label="الكل" onClick={() => setShowFullHistory(true)}><ShoppingBag size={22} color={C.dark} /></HeaderIconButton>}
+        title="Ï┤Ï▒ÏºÏí Ï¼Ï»┘èÏ»"
+        right={<HeaderIconButton label="Ïº┘ä┘â┘ä" onClick={() => setShowFullHistory(true)}><ShoppingBag size={22} color={C.dark} /></HeaderIconButton>}
       />
 
       {/* Total Amount Bar */}
       <div style={{ margin: '8px 16px', background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: C.shadow, border: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 14, color: C.gray, fontWeight: 600 }}>إجمالي الشراء</span>
+        <span style={{ fontSize: 14, color: C.gray, fontWeight: 600 }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘äÏ┤Ï▒ÏºÏí</span>
         <span style={{ fontSize: 22, fontWeight: 900, color: C.blue }}>{fmt(totalAmount)} <span style={{ fontSize: 13 }}>DA</span></span>
       </div>
 
       {/* Segmented Tabs */}
       <div style={{ display: 'flex', margin: '12px 16px', background: '#F3F4F6', borderRadius: 14, padding: 4, gap: 4 }}>
         {[
-          { id: 'supplier', label: 'المورد' },
-          { id: 'items', label: `الإضافة (${purchaseItems.length})` },
-          { id: 'payment', label: 'الدفع' },
+          { id: 'supplier', label: 'Ïº┘ä┘à┘êÏ▒Ï»' },
+          { id: 'items', label: `Ïº┘äÏÑÏÂÏº┘üÏ® (${purchaseItems.length})` },
+          { id: 'payment', label: 'Ïº┘äÏ»┘üÏ╣' },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', background: activeTab === tab.id ? '#fff' : 'transparent', color: activeTab === tab.id ? C.dark : C.gray, fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: activeTab === tab.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.2s' }}>
-            {tab.label}
+          {tab.label}
           </button>
         ))}
       </div>
@@ -1583,13 +1600,13 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
       {activeTab === 'supplier' && (
         <div style={{ padding: '0 16px' }}>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>المورد *</label>
+            <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïº┘ä┘à┘êÏ▒Ï» *</label>
             <div onClick={() => setShowSupplierPicker(true)} style={{ padding: '16px', borderRadius: 14, border: `2px dashed ${selectedSupplierId ? C.green : '#93C5FD'}`, background: selectedSupplierId ? '#F0F9FF' : '#EFF6FF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: C.blue, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Truck size={20} color="#fff" />
                 </div>
-                <span style={{ fontSize: 15, fontWeight: 700, color: selectedSupplierId ? C.dark : C.blue }}>{selectedSupplier ? selectedSupplier.name : 'اختر مورداً'}</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: selectedSupplierId ? C.dark : C.blue }}>{selectedSupplier ? selectedSupplier.name : 'ÏºÏ«Ï¬Ï▒ ┘à┘êÏ▒Ï»Ïº┘ï'}</span>
               </div>
               <ChevronLeft size={20} color={C.gray} />
             </div>
@@ -1598,19 +1615,19 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
           {selectedSupplier && (
             <div style={{ marginTop: 16 }}>
               <div style={{ background: '#fff', borderRadius: 14, padding: '16px', boxShadow: C.shadow, border: `1px solid ${C.border}`, marginBottom: 12 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: C.dark, marginBottom: 12 }}>سجل المشتريات مع {selectedSupplier.name}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: C.dark, marginBottom: 12 }}>Ï│Ï¼┘ä Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬ ┘àÏ╣ {selectedSupplier.name}</div>
                 {(() => {
                   const history = (Array.isArray(allPurchases) ? allPurchases : []).filter(r => r.supplier === selectedSupplier.name);
                   if (history.length === 0) {
-                    return <div style={{ textAlign: 'center', padding: '16px 0', color: C.gray, fontSize: 13 }}>لا توجد مشتريات سابقة مع هذا المورد</div>;
+                    return <div style={{ textAlign: 'center', padding: '16px 0', color: C.gray, fontSize: 13 }}>┘äÏº Ï¬┘êÏ¼Ï» ┘àÏ┤Ï¬Ï▒┘èÏºÏ¬ Ï│ÏºÏ¿┘éÏ® ┘àÏ╣ ┘çÏ░Ïº Ïº┘ä┘à┘êÏ▒Ï»</div>;
                   }
                   return history.map((r, i) => {
                     const itemsCount = r.items && Array.isArray(r.items) ? r.items.length : 1;
                     return (
                       <div key={r.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < history.length - 1 ? `1px solid ${C.border}` : 'none' }}>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>{itemsCount} منتجات</div>
-                          <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>{r.date || 'اليوم'}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>{itemsCount} ┘à┘åÏ¬Ï¼ÏºÏ¬</div>
+                          <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>{r.date || 'Ïº┘ä┘è┘ê┘à'}</div>
                         </div>
                         <div style={{ fontSize: 14, fontWeight: 800, color: C.blue }}>{fmt(r.total)} DA</div>
                       </div>
@@ -1628,27 +1645,27 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
                 if (supplierPurchases.length === 0) return null;
                 return (
                   <div style={{ background: '#fff', borderRadius: 14, padding: '16px', boxShadow: C.shadow, border: `1px solid ${C.border}` }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: C.dark, marginBottom: 12 }}>الملخص المالي</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: C.dark, marginBottom: 12 }}>Ïº┘ä┘à┘äÏ«ÏÁ Ïº┘ä┘àÏº┘ä┘è</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${C.border}` }}>
-                      <span style={{ fontSize: 13, color: C.gray }}>إجمالي المشتريات</span>
+                      <span style={{ fontSize: 13, color: C.gray }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬</span>
                       <span style={{ fontSize: 14, fontWeight: 800, color: C.dark }}>{fmt(totalPurchased)} DA</span>
                     </div>
                     {totalUnpaidToSupplier > 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${C.border}` }}>
-                        <span style={{ fontSize: 13, color: C.red }}>المتبقي للمورد (أنا مدين)</span>
+                        <span style={{ fontSize: 13, color: C.red }}>Ïº┘ä┘àÏ¬Ï¿┘é┘è ┘ä┘ä┘à┘êÏ▒Ï» (Ïú┘åÏº ┘àÏ»┘è┘å)</span>
                         <span style={{ fontSize: 14, fontWeight: 800, color: C.red }}>{fmt(totalUnpaidToSupplier)} DA</span>
                       </div>
                     )}
                     {totalPaidToSupplier > 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
-                        <span style={{ fontSize: 13, color: C.green }}>المدفوع للمورد</span>
+                        <span style={{ fontSize: 13, color: C.green }}>Ïº┘ä┘àÏ»┘ü┘êÏ╣ ┘ä┘ä┘à┘êÏ▒Ï»</span>
                         <span style={{ fontSize: 14, fontWeight: 800, color: C.green }}>{fmt(totalPaidToSupplier)} DA</span>
                       </div>
                     )}
                     {totalUnpaidToSupplier === 0 && totalPaidToSupplier === 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
-                        <span style={{ fontSize: 13, color: C.gray }}>الحالة</span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: C.green }}>لا ديون</span>
+                        <span style={{ fontSize: 13, color: C.gray }}>Ïº┘äÏ¡Ïº┘äÏ®</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: C.green }}>┘äÏº Ï»┘è┘ê┘å</span>
                       </div>
                     )}
                   </div>
@@ -1658,8 +1675,8 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
           )}
 
           <div style={{ marginTop: 16 }}>
-            <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>ملاحظة (اختياري)</label>
-            <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="ملاحظة (اختياري)" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
+            <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>┘à┘äÏºÏ¡Ï©Ï® (ÏºÏ«Ï¬┘èÏºÏ▒┘è)</label>
+            <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="┘à┘äÏºÏ¡Ï©Ï® (ÏºÏ«Ï¬┘èÏºÏ▒┘è)" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
           </div>
         </div>
       )}
@@ -1669,14 +1686,14 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
         <div style={{ padding: '0 16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{purchaseItems.length} مختار</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{purchaseItems.length} ┘àÏ«Ï¬ÏºÏ▒</span>
               <Check size={18} color={C.green} />
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>إجمالي الشراء: {fmt(totalAmount)} DA</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘äÏ┤Ï▒ÏºÏí: {fmt(totalAmount)} DA</span>
           </div>
 
           {purchaseItems.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: C.gray, fontSize: 14 }}>اضغط "إضافة منتج" لبدء الشراء</div>
+            <div style={{ textAlign: 'center', padding: '24px 0', color: C.gray, fontSize: 14 }}>ÏºÏÂÏ║ÏÀ "ÏÑÏÂÏº┘üÏ® ┘à┘åÏ¬Ï¼" ┘äÏ¿Ï»Ïí Ïº┘äÏ┤Ï▒ÏºÏí</div>
           ) : purchaseItems.map(item => {
             const p = products.find(pr => pr.id === item.productId) || {};
             const subtotal = item.qty * (item.costPerUnit || p.buyPrice || 0);
@@ -1687,25 +1704,25 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
                     <button onClick={() => handleRemoveItem(item.id)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                       <X size={14} color={C.red} />
                     </button>
-                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{p.emoji || '📦'}</div>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{p.emoji || '­ƒôª'}</div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{p.name}</div>
-                      <div style={{ fontSize: 12, color: C.gray }}>المجموع: {fmt(subtotal)} DA</div>
+                      <div style={{ fontSize: 12, color: C.gray }}>Ïº┘ä┘àÏ¼┘à┘êÏ╣: {fmt(subtotal)} DA</div>
                     </div>
                   </div>
                   <Check size={20} color={C.green} />
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: C.gray, marginBottom: 4, display: 'block' }}>الكمية</label>
+                    <label style={{ fontSize: 11, color: C.gray, marginBottom: 4, display: 'block' }}>Ïº┘ä┘â┘à┘èÏ®</label>
                     <input type="number" inputMode="numeric" value={item.qty} onChange={e => handleUpdateItem(item.id, 'qty', Math.max(1, Number(e.target.value) || 1))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14, fontWeight: 700, textAlign: 'center', boxSizing: 'border-box', background: '#FAFAFA' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: C.gray, marginBottom: 4, display: 'block' }}>تكلفة الوحدة</label>
+                    <label style={{ fontSize: 11, color: C.gray, marginBottom: 4, display: 'block' }}>Ï¬┘â┘ä┘üÏ® Ïº┘ä┘êÏ¡Ï»Ï®</label>
                     <input type="number" inputMode="decimal" value={item.costPerUnit || ''} onChange={e => handleUpdateItem(item.id, 'costPerUnit', Number(e.target.value) || 0)} placeholder={String(p.buyPrice || 0)} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14, fontWeight: 700, textAlign: 'center', boxSizing: 'border-box', background: '#FAFAFA' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: C.gray, marginBottom: 4, display: 'block' }}>المجموع</label>
+                    <label style={{ fontSize: 11, color: C.gray, marginBottom: 4, display: 'block' }}>Ïº┘ä┘àÏ¼┘à┘êÏ╣</label>
                     <div style={{ padding: '8px 10px', borderRadius: 10, background: '#EFF6FF', textAlign: 'center', fontSize: 14, fontWeight: 800, color: C.blue }}>{fmt(subtotal)} DA</div>
                   </div>
                 </div>
@@ -1714,7 +1731,7 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
           })}
 
           <button onClick={() => setShowProductSelector(true)} style={{ width: '100%', height: 52, background: '#F9FAFB', border: `1.5px dashed #D1D5DB`, borderRadius: 12, color: C.dark, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 8, gap: 6 }}>
-            <Plus size={18} /> إضافة منتج
+            <Plus size={18} /> ÏÑÏÂÏº┘üÏ® ┘à┘åÏ¬Ï¼
           </button>
         </div>
       )}
@@ -1724,11 +1741,11 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
         <div style={{ padding: '0 16px' }}>
           <div style={{ background: '#fff', borderRadius: 14, padding: '20px', boxShadow: C.shadow, border: `1px solid ${C.border}`, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: C.dark }}>إجمالي الشراء</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: C.dark }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘äÏ┤Ï▒ÏºÏí</span>
               <span style={{ fontSize: 22, fontWeight: 900, color: C.blue }}>{fmt(totalAmount)} DA</span>
             </div>
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-              <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>المبلغ المدفوع الآن</label>
+              <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïº┘ä┘àÏ¿┘äÏ║ Ïº┘ä┘àÏ»┘ü┘êÏ╣ Ïº┘äÏó┘å</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', borderRadius: 12, border: `2px solid ${C.border}`, background: '#FAFAFA', height: 52 }}>
                 <Wallet size={20} color={C.gray} />
                 <input type="number" inputMode="decimal" value={amountPaid} onChange={e => setAmountPaid(e.target.value)} placeholder="0" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 20, fontWeight: 800, background: 'transparent', textAlign: 'left', direction: 'ltr' }} />
@@ -1736,23 +1753,23 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
               </div>
             </div>
             <button onClick={() => setAmountPaid(String(totalAmount))} style={{ width: '100%', marginTop: 12, padding: '10px', borderRadius: 12, border: 'none', background: '#EFF6FF', color: C.blue, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              💵 دفع المبلغ كاملاً ({fmt(totalAmount)} DA)
+              ­ƒÆÁ Ï»┘üÏ╣ Ïº┘ä┘àÏ¿┘äÏ║ ┘âÏº┘à┘äÏº┘ï ({fmt(totalAmount)} DA)
             </button>
           </div>
 
           <div style={{ background: '#fff', borderRadius: 14, padding: '16px', boxShadow: C.shadow, border: `1px solid ${C.border}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ fontSize: 14, color: C.gray }}>المبلغ المدفوع الآن</span>
+              <span style={{ fontSize: 14, color: C.gray }}>Ïº┘ä┘àÏ¿┘äÏ║ Ïº┘ä┘àÏ»┘ü┘êÏ╣ Ïº┘äÏó┘å</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: C.green }}>{fmt(paidAmount)} DA</span>
             </div>
             {remaining > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ fontSize: 14, color: C.gray }}>دين للمورد</span>
+                <span style={{ fontSize: 14, color: C.gray }}>Ï»┘è┘å ┘ä┘ä┘à┘êÏ▒Ï»</span>
                 <span style={{ fontSize: 14, fontWeight: 800, color: C.orange }}>{fmt(remaining)} DA</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0' }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>إجمالي المستحق للمورد</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ│Ï¬Ï¡┘é ┘ä┘ä┘à┘êÏ▒Ï»</span>
               <span style={{ fontSize: 16, fontWeight: 900, color: C.red }}>{fmt(totalSupplierDue)} DA</span>
             </div>
           </div>
@@ -1762,9 +1779,9 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
       {/* Save + Cancel Bottom Bar */}
       {purchaseItems.length > 0 && (
         <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', padding: '14px 16px 70px', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', zIndex: 200, display: 'flex', gap: 10 }}>
-          <button onClick={() => { setPurchaseItems([]); setSelectedSupplierId(''); setAmountPaid(''); }} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
+          <button onClick={() => { setPurchaseItems([]); setSelectedSupplierId(''); setAmountPaid(''); }} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
           <button onClick={handleSave} style={{ flex: 1.5, padding: '14px', borderRadius: 14, border: 'none', background: C.green, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Check size={18} /> حفظ
+            <Check size={18} /> Ï¡┘üÏ©
           </button>
         </div>
       )}
@@ -1778,12 +1795,12 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
               <button onClick={() => setShowSupplierPicker(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <X size={18} color={C.dark} />
               </button>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>اختر مورداً</h2>
-              <button onClick={() => { setShowSupplierPicker(false); setShowAddSupplier(true); }} style={{ fontSize: 13, fontWeight: 700, color: C.blue, background: 'none', border: 'none', cursor: 'pointer' }}>+ جديد</button>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>ÏºÏ«Ï¬Ï▒ ┘à┘êÏ▒Ï»Ïº┘ï</h2>
+              <button onClick={() => { setShowSupplierPicker(false); setShowAddSupplier(true); }} style={{ fontSize: 13, fontWeight: 700, color: C.blue, background: 'none', border: 'none', cursor: 'pointer' }}>+ Ï¼Ï»┘èÏ»</button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
               {suppliers.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px', color: C.gray }}>لا يوجد موردون. اضغط "+ جديد" لإضافة مورد.</div>
+                <div style={{ textAlign: 'center', padding: '24px', color: C.gray }}>┘äÏº ┘è┘êÏ¼Ï» ┘à┘êÏ▒Ï»┘ê┘å. ÏºÏÂÏ║ÏÀ "+ Ï¼Ï»┘èÏ»" ┘äÏÑÏÂÏº┘üÏ® ┘à┘êÏ▒Ï».</div>
               ) : suppliers.map(s => (
                 <div key={s.id} onClick={() => { setSelectedSupplierId(String(s.id)); setShowSupplierPicker(false); }} style={{ padding: '14px', borderRadius: 12, marginBottom: 8, background: String(s.id) === selectedSupplierId ? '#EFF6FF' : '#F9FAFB', border: String(s.id) === selectedSupplierId ? `1.5px solid ${C.blue}` : `1px solid ${C.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1805,18 +1822,18 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
         <>
           <div onClick={() => setShowAddSupplier(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 230 }} />
           <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderRadius: '24px 24px 0 0', zIndex: 231, animation: 'slideUp 0.25s ease', padding: '16px 18px 24px' }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark, textAlign: 'center', marginBottom: 16 }}>مورد جديد</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark, textAlign: 'center', marginBottom: 16 }}>┘à┘êÏ▒Ï» Ï¼Ï»┘èÏ»</h2>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 13, fontWeight: 700, color: C.dark, marginBottom: 6, display: 'block', textAlign: 'right' }}>اسم المورد *</label>
-              <input value={newSupplierName} onChange={e => setNewSupplierName(e.target.value)} placeholder="اسم المورد" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
+              <label style={{ fontSize: 13, fontWeight: 700, color: C.dark, marginBottom: 6, display: 'block', textAlign: 'right' }}>ÏºÏ│┘à Ïº┘ä┘à┘êÏ▒Ï» *</label>
+              <input value={newSupplierName} onChange={e => setNewSupplierName(e.target.value)} placeholder="ÏºÏ│┘à Ïº┘ä┘à┘êÏ▒Ï»" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 700, color: C.dark, marginBottom: 6, display: 'block', textAlign: 'right' }}>الهاتف (اختياري)</label>
+              <label style={{ fontSize: 13, fontWeight: 700, color: C.dark, marginBottom: 6, display: 'block', textAlign: 'right' }}>Ïº┘ä┘çÏºÏ¬┘ü (ÏºÏ«Ï¬┘èÏºÏ▒┘è)</label>
               <input value={newSupplierPhone} onChange={e => setNewSupplierPhone(e.target.value)} placeholder="0555555555" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'ltr', background: '#FAFAFA', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowAddSupplier(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
-              <button onClick={handleAddSupplier} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>حفظ</button>
+              <button onClick={() => setShowAddSupplier(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
+              <button onClick={handleAddSupplier} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Ï¡┘üÏ©</button>
             </div>
           </div>
         </>
@@ -1831,7 +1848,7 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
               <button onClick={() => setShowProductSelector(false)} style={{ background: '#F3F4F6', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <X size={20} color={C.dark} />
               </button>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: C.dark }}>اختر المنتجات</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: C.dark }}>ÏºÏ«Ï¬Ï▒ Ïº┘ä┘à┘åÏ¬Ï¼ÏºÏ¬</h2>
               <div style={{ width: 36 }} />
             </div>
             <div style={{ display: 'flex', gap: 8, padding: '12px 16px', overflowX: 'auto', background: '#fff', borderBottom: `1px solid ${C.border}`, direction: 'rtl' }}>
@@ -1845,7 +1862,7 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {selectorProducts.map(p => (
                   <div key={p.id} onClick={() => handleProductSelect(p)} style={{ background: '#fff', borderRadius: 16, padding: '16px 14px', textAlign: 'center', boxShadow: C.shadow, cursor: 'pointer', border: `1px solid ${C.border}` }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>{p.emoji || '📦'}</div>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>{p.emoji || '­ƒôª'}</div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 4, lineHeight: 1.3 }}>{p.name}</div>
                     <div style={{ fontSize: 15, fontWeight: 800, color: C.blue }}>{p.buyPrice} <span style={{ fontSize: 12 }}>DA</span></div>
                   </div>
@@ -1859,12 +1876,85 @@ function PurchaseScreen({ products, categories, onPurchase, suppliers, setSuppli
   );
 }
 
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN 4: CLOSE DAY (ÏÑÏ║┘äÏº┘é Ïº┘ä┘è┘ê┘à)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+function CloseDayScreen({ step, setStep, todaySalesTotal, todayPurchasesTotal, stockValue, onClose, onBack }) {
+  return (
+    <div>
+      <AppHeader
+        title="ÏÑÏ║┘äÏº┘é Ïº┘ä┘è┘ê┘à"
+        subtitle={getArabicDate()}
+        left={<HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+      />
 
-/* ═══════════════════════════════════════════
-   SCREEN 5: REPORTS (التقارير)
-   ═══════════════════════════════════════════ */
-function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTotal, todayProfit, debts, onShowDetails, onExport, onShare, onBack, productRecipes = [], ingredients = [], cyclicExpenses = [] }) {
-  const [period, setPeriod] = useState('اليوم');
+      <div style={{ padding: '20px 32px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        {[ { num: 1, label: 'Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬' }, { num: 2, label: 'Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬' }, { num: 3, label: 'Ïº┘äÏÑÏ║┘äÏº┘é' } ].map((s, i) => {
+          const isCompleted = step > s.num;
+          const isCurrent = step >= s.num;
+          return (
+            <div key={s.num} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 'none' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: isCurrent ? C.blue : '#E5E7EB', color: isCurrent ? '#fff' : C.gray, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700 }}>{s.num}</div>
+                <span style={{ fontSize: 11, fontWeight: 600, marginTop: 6, color: isCurrent ? C.dark : C.gray }}>{s.label}</span>
+              </div>
+              {i < 2 && <div style={{ flex: 1, height: 3, margin: '0 8px', background: isCompleted ? C.blue : '#E5E7EB', borderRadius: 2, marginTop: -12 }} />}
+            </div>
+          );
+        })}
+      </div>
+
+      {step <= 2 && (
+        <div style={{ padding: '0 16px', marginBottom: 16 }}>
+          <div style={{ background: '#fff', borderRadius: C.radius, padding: '24px 20px', boxShadow: C.shadow }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 16, textAlign: 'right' }}>┘àÏ┤Ï¬Ï▒┘èÏºÏ¬ Ïº┘ä┘è┘ê┘à</h3>
+            <p style={{ fontSize: 18, fontWeight: 700, color: C.dark, textAlign: 'center', marginBottom: 20 }}>┘ç┘ä ÏºÏ┤Ï¬Ï▒┘èÏ¬ Ï┤┘èÏªÏº┘ï Ïº┘ä┘è┘ê┘àÏƒ</p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setStep(3)} style={{ flex: 1, padding: '14px', borderRadius: 14, background: C.green, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Check size={18} /> ┘åÏ╣┘à</button>
+              <button onClick={() => setStep(3)} style={{ flex: 1, padding: '14px', borderRadius: 14, background: '#fff', color: C.dark, border: `1.5px solid ${C.border}`, fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><X size={18} /> ┘äÏº</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step >= 3 && (
+        <div style={{ padding: '0 16px' }}>
+          <div style={{ background: '#fff', borderRadius: C.radius, padding: '24px 20px', boxShadow: C.shadow }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 20, textAlign: 'right' }}>┘à┘äÏ«ÏÁ Ïº┘ä┘è┘ê┘à</h3>
+            {[
+              { icon: <TrendingUp size={20} color={C.green} />, label: 'ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬', value: todaySalesTotal, color: C.green, bg: '#F0FDF4' },
+              { icon: <ShoppingBag size={20} color={C.orange} />, label: 'ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬', value: todayPurchasesTotal, color: C.orange, bg: '#FFF7ED' },
+              { icon: <Package size={20} color={C.blue} />, label: '┘é┘è┘àÏ® Ïº┘ä┘àÏ«Ï▓┘ê┘å Ïº┘äÏ«Ï¬Ïº┘à┘è', value: stockValue, color: C.blue, bg: '#EFF6FF' },
+            ].map((row, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: i < 2 ? `1px solid ${C.border}` : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: row.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{row.icon}</div>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>{row.label}</span>
+                </div>
+                <span style={{ fontSize: 22, fontWeight: 800, color: row.color }}>{fmt(row.value)} <span style={{ fontSize: 12, fontWeight: 600 }}>DA</span></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {step >= 3 && (
+        <div style={{ padding: '20px 16px 100px' }}>
+          <button onClick={onClose} className="close-day-btn">
+            <Lock size={18} /> ÏÑÏ║┘äÏº┘é Ïº┘ä┘è┘ê┘à ┘êÏ¿Ï»Ïí ┘è┘ê┘à Ï¼Ï»┘èÏ»
+          </button>
+          <p style={{ fontSize: 12, color: C.red, textAlign: 'center', marginTop: 8 }}>ÏÑÏ║┘äÏº┘é Ïº┘ä┘è┘ê┘à Ï│┘è┘é┘ê┘à Ï¿Ï¬ÏÁ┘ü┘èÏ▒ Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬ ┘äÏ¿Ï»Ïí ┘è┘ê┘à Ï¼Ï»┘èÏ»</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN 5: REPORTS (Ïº┘äÏ¬┘éÏºÏ▒┘èÏ▒)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
+function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTotal, todayProfit, debts, onShowDetails, onShowCloseDay, onExport, onShare, productRecipes = [], ingredients = [], cyclicExpenses = [] }) {
+  const [period, setPeriod] = useState('Ïº┘ä┘è┘ê┘à');
   const [showDrawer, setShowDrawer] = useState(false);
   const salesCount = todaySales.length;
 
@@ -1883,9 +1973,9 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
       const amount = Number(exp.amount) || 0;
       const cycleNumber = Number(exp.cycleNumber) || 1;
       let dailyCost = 0;
-      if (exp.cycleUnit === 'day' || exp.cycleUnit === 'يوم') {
+      if (exp.cycleUnit === '┘è┘ê┘à') {
         dailyCost = amount / cycleNumber;
-      } else if (exp.cycleUnit === 'month' || exp.cycleUnit === 'شهر') {
+      } else if (exp.cycleUnit === 'Ï┤┘çÏ▒') {
         dailyCost = amount / (cycleNumber * 30);
       }
       return { ...exp, dailyCost };
@@ -1918,19 +2008,26 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
   return (
     <div>
       <AppHeader
-        title="التقارير"
+        title="Ïº┘äÏ¬┘éÏºÏ▒┘èÏ▒"
         left={(
           <>
-            <HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>
-            <HeaderIconButton label="مشاركة" onClick={onShare}><Share2 size={21} color={C.dark} /></HeaderIconButton>
-            <HeaderIconButton label="تحميل" onClick={onExport}><Download size={21} color={C.dark} /></HeaderIconButton>
+            <HeaderIconButton label="┘àÏ┤ÏºÏ▒┘âÏ®" onClick={onShare}><Share2 size={21} color={C.dark} /></HeaderIconButton>
+            <HeaderIconButton label="Ï¬Ï¡┘à┘è┘ä" onClick={onExport}><Download size={21} color={C.dark} /></HeaderIconButton>
           </>
         )}
+        right={<HeaderIconButton label="Ï¬┘üÏºÏÁ┘è┘ä Ïº┘ä┘è┘ê┘à" onClick={() => setShowDrawer(true)}><Menu size={22} color={C.dark} /></HeaderIconButton>}
       />
 
       <div style={{ padding: '8px 16px' }}>
+        <button onClick={onShowCloseDay} style={{ width: '100%', padding: '14px 20px', borderRadius: 14, background: 'linear-gradient(135deg, #1A1A1A, #374151)', color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.15)', transition: 'all 0.2s ease' }}>
+          <Moon size={18} /> ÏÑÏ║┘äÏº┘é Ïº┘ä┘è┘ê┘à
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.orange, marginRight: 4 }} />
+        </button>
+      </div>
+
+      <div style={{ padding: '8px 16px' }}>
         <div style={{ display: 'flex', borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.border}`, background: '#fff' }}>
-          {['الشهر', 'الأسبوع', 'اليوم'].map(p => (
+          {['Ïº┘äÏ┤┘çÏ▒', 'Ïº┘äÏúÏ│Ï¿┘êÏ╣', 'Ïº┘ä┘è┘ê┘à'].map(p => (
             <button key={p} onClick={() => setPeriod(p)} style={{ flex: 1, padding: '10px', fontSize: 13, fontWeight: 600, background: period === p ? C.blue : 'transparent', color: period === p ? '#fff' : C.dark, border: 'none', cursor: 'pointer' }}>{p}</button>
           ))}
         </div>
@@ -1938,10 +2035,10 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '8px 16px' }}>
         {[
-          { label: 'إجمالي المبيعات', value: `${fmt(todaySalesTotal)} DA`, color: C.green },
-          { label: 'إجمالي المشتريات', value: `${fmt(todayPurchasesTotal)} DA`, color: C.orange },
-          { label: 'صافي الربح', value: `${fmt(todayProfit)} DA`, color: C.blue },
-          { label: 'عدد المبيعات', value: salesCount, color: C.dark },
+          { label: 'ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬', value: `${fmt(todaySalesTotal)} DA`, color: C.green },
+          { label: 'ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬', value: `${fmt(todayPurchasesTotal)} DA`, color: C.orange },
+          { label: 'ÏÁÏº┘ü┘è Ïº┘äÏ▒Ï¿Ï¡', value: `${fmt(todayProfit)} DA`, color: C.blue },
+          { label: 'Ï╣Ï»Ï» Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬', value: salesCount, color: C.dark },
         ].map((s, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: C.radius, padding: '16px', boxShadow: C.shadow }}>
             <div style={{ fontSize: 12, color: C.gray, marginBottom: 8 }}>{s.label}</div>
@@ -1952,7 +2049,7 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
       </div>
 
       <div style={{ padding: '16px', background: '#fff', margin: '12px 16px', borderRadius: C.radius, boxShadow: C.shadow }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, color: C.dark }}>المبيعات - آخر 7 أيام</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, color: C.dark }}>Ïº┘ä┘àÏ¿┘èÏ╣ÏºÏ¬ - ÏóÏ«Ï▒ 7 Ïú┘èÏº┘à</h3>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: 120, gap: 6 }}>
           {barData.map((d, i) => (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
@@ -1964,14 +2061,14 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
       </div>
 
       <div style={{ padding: '4px 16px 8px' }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: C.dark }}>أفضل المنتجات مبيعاً</h3>
-        {bestProducts.length === 0 && <p style={{ fontSize: 13, color: C.gray, textAlign: 'center', padding: 20 }}>لا توجد مبيعات بعد</p>}
+        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: C.dark }}>Ïú┘üÏÂ┘ä Ïº┘ä┘à┘åÏ¬Ï¼ÏºÏ¬ ┘àÏ¿┘èÏ╣Ïº┘ï</h3>
+        {bestProducts.length === 0 && <p style={{ fontSize: 13, color: C.gray, textAlign: 'center', padding: 20 }}>┘äÏº Ï¬┘êÏ¼Ï» ┘àÏ¿┘èÏ╣ÏºÏ¬ Ï¿Ï╣Ï»</p>}
         {bestProducts.map((p, i) => (
           <div key={p.id} style={{ background: '#fff', borderRadius: 14, padding: '12px', marginBottom: 8, boxShadow: C.shadow, display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ width: 24, height: 24, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{i + 1}</span>
             <ProductEntity product={p} variant="small" />
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: 11, color: C.gray, marginRight: 6 }}>×{p.soldQty}</span>
+              <span style={{ fontSize: 11, color: C.gray, marginRight: 6 }}>├ù{p.soldQty}</span>
             </div>
             <span style={{ fontSize: 14, fontWeight: 700, color: C.green }}>{fmt(p.profit)} DA</span>
           </div>
@@ -1979,7 +2076,7 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
       </div>
 
       <div style={{ padding: '12px 16px 100px' }}>
-        <button onClick={onShowDetails} style={{ width: '100%', padding: '14px', borderRadius: 14, background: '#fff', color: C.blue, border: `1.5px solid ${C.blue}`, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>تفاصيل الأرباح حسب المنتج ←</button>
+        <button onClick={onShowDetails} style={{ width: '100%', padding: '14px', borderRadius: 14, background: '#fff', color: C.blue, border: `1.5px solid ${C.blue}`, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Ï¬┘üÏºÏÁ┘è┘ä Ïº┘äÏúÏ▒Ï¿ÏºÏ¡ Ï¡Ï│Ï¿ Ïº┘ä┘à┘åÏ¬Ï¼ ÔåÉ</button>
       </div>
 
       <ReportsDrawer
@@ -1993,15 +2090,15 @@ function ReportsScreen({ products, todaySales, todaySalesTotal, todayPurchasesTo
   );
 }
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    SCREEN 5b: PROFIT DETAILS
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function ProfitDetailsScreen({ products, todaySales, dayRecord, onBack, productRecipes = [], ingredients = [] }) {
-  const [period, setPeriod] = useState('اليوم');
-  const [expanded, setExpanded] = useState({ 'مشروبات': true, 'أكل': true, 'أخرى': true });
+  const [period, setPeriod] = useState('Ïº┘ä┘è┘ê┘à');
+  const [expanded, setExpanded] = useState({ '┘àÏ┤Ï▒┘êÏ¿ÏºÏ¬': true, 'Ïú┘â┘ä': true, 'ÏúÏ«Ï▒┘ë': true });
 
   const categories = useMemo(() => uniqueCategories([...DEFAULT_CATEGORIES, ...products.map(product => product.category)]), [products]);
-  const categoryEmojis = { 'مشروبات': '🥤', 'أكل': '🍟', 'أخرى': '🧴' };
+  const categoryEmojis = { '┘àÏ┤Ï▒┘êÏ¿ÏºÏ¬': '­ƒÑñ', 'Ïú┘â┘ä': '­ƒìƒ', 'ÏúÏ«Ï▒┘ë': '­ƒº┤' };
 
   const profitData = useMemo(() => {
     const data = {};
@@ -2031,15 +2128,15 @@ function ProfitDetailsScreen({ products, todaySales, dayRecord, onBack, productR
   return (
     <div style={{ paddingBottom: 80 }}>
       <AppHeader
-        title="تفاصيل الأرباح"
-        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
-        right={<HeaderIconButton label="الأرباح"><ShoppingBag size={22} color={C.dark} /></HeaderIconButton>}
+        title="Ï¬┘üÏºÏÁ┘è┘ä Ïº┘äÏúÏ▒Ï¿ÏºÏ¡"
+        left={<HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+        right={<HeaderIconButton label="Ïº┘äÏúÏ▒Ï¿ÏºÏ¡"><ShoppingBag size={22} color={C.dark} /></HeaderIconButton>}
       />
 
       <div style={{ margin: '8px 16px', padding: '24px 20px', background: `linear-gradient(135deg, ${C.blue}, #1D4ED8)`, borderRadius: C.radius, textAlign: 'center', color: '#fff' }}>
-        <p style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>إجمالي الربح الصافي</p>
+        <p style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘äÏ▒Ï¿Ï¡ Ïº┘äÏÁÏº┘ü┘è</p>
         <p style={{ fontSize: 42, fontWeight: 800, marginBottom: 4 }}>{fmt(totalProfit)} <span style={{ fontSize: 18 }}>DA</span></p>
-        <p style={{ fontSize: 12, opacity: 0.8 }}>من {categoriesWithProducts.length} فئات | {products.length} منتج</p>
+        <p style={{ fontSize: 12, opacity: 0.8 }}>┘à┘å {categoriesWithProducts.length} ┘üÏªÏºÏ¬ | {products.length} ┘à┘åÏ¬Ï¼</p>
       </div>
 
       {categoriesWithProducts.map(cat => (
@@ -2058,17 +2155,17 @@ function ProfitDetailsScreen({ products, todaySales, dayRecord, onBack, productR
           {expanded[cat] && (
             <div style={{ padding: '0 16px 16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.2fr 1fr', padding: '8px 0', borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ fontSize: 11, color: C.gray, fontWeight: 600 }}>المنتج</span>
-                <span style={{ fontSize: 11, color: C.gray, fontWeight: 600, textAlign: 'center' }}>المخزون المملوك</span>
-                <span style={{ fontSize: 11, color: C.gray, fontWeight: 600, textAlign: 'center' }}>المخزون المبيع</span>
-                <span style={{ fontSize: 11, color: C.gray, fontWeight: 600, textAlign: 'left' }}>الربح</span>
+                <span style={{ fontSize: 11, color: C.gray, fontWeight: 600 }}>Ïº┘ä┘à┘åÏ¬Ï¼</span>
+                <span style={{ fontSize: 11, color: C.gray, fontWeight: 600, textAlign: 'center' }}>Ïº┘ä┘àÏ«Ï▓┘ê┘å Ïº┘ä┘à┘à┘ä┘ê┘â</span>
+                <span style={{ fontSize: 11, color: C.gray, fontWeight: 600, textAlign: 'center' }}>Ïº┘ä┘àÏ«Ï▓┘ê┘å Ïº┘ä┘àÏ¿┘èÏ╣</span>
+                <span style={{ fontSize: 11, color: C.gray, fontWeight: 600, textAlign: 'left' }}>Ïº┘äÏ▒Ï¿Ï¡</span>
               </div>
               {products.filter(p => p.category === cat).map(p => {
                 const d = profitData[p.id];
                 return (
                   <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.2fr 1fr', padding: '10px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center' }}>
                     <ProductEntity product={p} variant="small" />
-                    <><span style={{ fontSize: 12, textAlign: 'center' }}>{d?.ownedQty || 0} وحدة</span><span style={{ fontSize: 12, textAlign: 'center' }}>{d?.soldQty || 0} وحدة</span></>
+                    <><span style={{ fontSize: 12, textAlign: 'center' }}>{d?.ownedQty || 0} ┘êÏ¡Ï»Ï®</span><span style={{ fontSize: 12, textAlign: 'center' }}>{d?.soldQty || 0} ┘êÏ¡Ï»Ï®</span></>
                     <span style={{ fontSize: 13, fontWeight: 700, textAlign: 'left', color: d?.profit > 0 ? C.green : C.red }}>{fmt(d?.profit || 0)} DA</span>
                   </div>
                 );
@@ -2081,19 +2178,25 @@ function ProfitDetailsScreen({ products, todaySales, dayRecord, onBack, productR
   );
 }
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    SCREEN 6: ADD/EDIT PRODUCT
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function ProductFormScreen({ product, categories, onSave, onDelete, onRestore, onToggle, onBack }) {
   const isEdit = !!product;
   const fileInputRef = useRef(null);
   const [name, setName] = useState(product?.name || '');
   const [category, setCategory] = useState(product?.category || '');
-  const [emoji, setEmoji] = useState(product?.emoji || '📦');
+  const [emoji, setEmoji] = useState(product?.emoji || '­ƒôª');
   const [image, setImage] = useState(product?.image || '');
+  const [buyPrice, setBuyPrice] = useState(String(product?.buyPrice || '0'));
+  const [sellPrice, setSellPrice] = useState(String(product?.sellPrice || '0'));
+  const [qty, setQty] = useState(product?.qty || 0);
+  const [minAlert, setMinAlert] = useState(product?.minAlert || 5);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
+  const profit = (Number(sellPrice) || 0) - (Number(buyPrice) || 0);
   const isInactive = isEdit && !product.is_active;
+  const productForPreview = { ...product, id: product?.id || 0, name: name || '┘à┘åÏ¬Ï¼ Ï¼Ï»┘èÏ»', emoji, category: category || 'ÏúÏ«Ï▒┘ë', image };
 
   const handleImageChange = (event) => {
     const file = event.target.files?.[0];
@@ -2106,23 +2209,23 @@ function ProductFormScreen({ product, categories, onSave, onDelete, onRestore, o
 
   const handleSave = () => {
     if (!name || !category) return;
-    onSave({ name, category, emoji, image });
+    onSave({ name, category, emoji, buyPrice: Number(buyPrice) || 0, sellPrice: Number(sellPrice) || 0, qty: Number(qty) || 0, minAlert: Number(minAlert) || 0, image });
   };
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
       <AppHeader
-        title={isEdit ? 'تعديل المنتج' : 'إضافة منتج'}
-        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
-        right={<button onClick={handleSave} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 800, color: C.dark }}>حفظ</button>}
+        title={isEdit ? 'Ï¬Ï╣Ï»┘è┘ä Ïº┘ä┘à┘åÏ¬Ï¼' : 'ÏÑÏÂÏº┘üÏ® ┘à┘åÏ¬Ï¼'}
+        left={<HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+        right={<button onClick={handleSave} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 800, color: C.dark }}>Ï¡┘üÏ©</button>}
         border
       />
 
       <div style={{ padding: '16px 20px', overflowY: 'auto' }}>
         {isInactive && (
           <div style={{ background: '#FEF3C7', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}>هذا المنتج معطل حالياً</span>
-            <button onClick={() => onRestore(product.id)} style={{ background: C.green, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}><RotateCcw size={14} /> تفعيل</button>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}>┘çÏ░Ïº Ïº┘ä┘à┘åÏ¬Ï¼ ┘àÏ╣ÏÀ┘ä Ï¡Ïº┘ä┘èÏº┘ï</span>
+            <button onClick={() => onRestore(product.id)} style={{ background: C.green, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}><RotateCcw size={14} /> Ï¬┘üÏ╣┘è┘ä</button>
           </div>
         )}
 
@@ -2141,31 +2244,31 @@ function ProductFormScreen({ product, categories, onSave, onDelete, onRestore, o
             </button>
           </div>
           {image && (
-            <button type="button" onClick={() => setImage('')} style={{ marginTop: 12, border: 'none', background: 'transparent', color: C.red, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>إزالة الصورة المرفوعة</button>
+            <button type="button" onClick={() => setImage('')} style={{ marginTop: 12, border: 'none', background: 'transparent', color: C.red, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>ÏÑÏ▓Ïº┘äÏ® Ïº┘äÏÁ┘êÏ▒Ï® Ïº┘ä┘àÏ▒┘ü┘êÏ╣Ï®</button>
           )}
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 8, display: 'block', textAlign: 'right' }}>أو اختر رمزاً سريعاً</label>
+          <label style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïú┘ê ÏºÏ«Ï¬Ï▒ Ï▒┘àÏ▓Ïº┘ï Ï│Ï▒┘èÏ╣Ïº┘ï</label>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, direction: 'rtl', scrollbarWidth: 'none' }}>
-            {['📦', '🥫', '🥛', '🥩', '🍔', '🍕', '🍟', '🥤', '☕', '🍰', '🥐', '🍎', '🥕', '🍅', '🧅', '🌶️', '🧀', '🍗', '🍚', '🥖', '🥪', '🥗'].map(e => (
+            {['­ƒôª', '­ƒÑ½', '­ƒÑø', '­ƒÑ®', '­ƒìö', '­ƒìò', '­ƒìƒ', '­ƒÑñ', 'Ôÿò', '­ƒì░', '­ƒÑÉ', '­ƒìÄ', '­ƒÑò', '­ƒìà', '­ƒºà', '­ƒîÂ´©Å', '­ƒºÇ', '­ƒìù', '­ƒìÜ', '­ƒÑû', '­ƒÑ¬', '­ƒÑù'].map(e => (
               <button key={e} type="button" onClick={() => { setEmoji(e); setImage(''); }} style={{ fontSize: 28, padding: '10px 14px', background: emoji === e && !image ? '#EFF6FF' : '#fff', border: emoji === e && !image ? `2px solid ${C.blue}` : `1px solid ${C.border}`, borderRadius: 16, cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{e}</button>
             ))}
           </div>
         </div>
 
-        {/* اسم المنتج */}
+        {/* ÏºÏ│┘à Ïº┘ä┘à┘åÏ¬Ï¼ */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>اسم المنتج</label>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="أدخل اسم المنتج" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
+          <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>ÏºÏ│┘à Ïº┘ä┘à┘åÏ¬Ï¼</label>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="ÏúÏ»Ï«┘ä ÏºÏ│┘à Ïº┘ä┘à┘åÏ¬Ï¼" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
         </div>
 
-        {/* التصنيف */}
+        {/* Ïº┘äÏ¬ÏÁ┘å┘è┘ü */}
         <div style={{ marginBottom: 16, position: 'relative' }}>
-          <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>التصنيف</label>
+          <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>Ïº┘äÏ¬ÏÁ┘å┘è┘ü</label>
           <div onClick={() => setShowCategoryDropdown(!showCategoryDropdown)} style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, background: '#FAFAFA', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxSizing: 'border-box' }}>
             <ChevronDown size={16} color={C.gray} />
-            <span style={{ color: category ? C.dark : C.gray }}>{category || 'اختر التصنيف'}</span>
+            <span style={{ color: category ? C.dark : C.gray }}>{category || 'ÏºÏ«Ï¬Ï▒ Ïº┘äÏ¬ÏÁ┘å┘è┘ü'}</span>
           </div>
           {showCategoryDropdown && (
             <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', borderRadius: 12, marginTop: 4, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', zIndex: 50 }}>
@@ -2176,29 +2279,69 @@ function ProductFormScreen({ product, categories, onSave, onDelete, onRestore, o
           )}
         </div>
 
+        {/* Pricing and Inventory Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 8 }}>
+          {/* Row 1: Ï│Ï╣Ï▒ Ïº┘äÏ┤Ï▒ÏºÏí & ÏÑÏ»ÏºÏ▒Ï® Ïº┘ä┘â┘à┘èÏ® Ïº┘ä┘àÏ¬┘ê┘üÏ▒Ï® */}
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 12 }}>
+            {/* Right field in RTL: Ï│Ï╣Ï▒ Ïº┘äÏ┤Ï▒ÏºÏí (DA) */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>Ï│Ï╣Ï▒ Ïº┘äÏ┤Ï▒ÏºÏí (DA)</label>
+              <input type="number" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} style={{ width: '100%', height: 48, padding: '0 12px', borderRadius: 12, border: '2px solid #D1D5DB', fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
+            </div>
+            {/* Left field in RTL: ÏÑÏ»ÏºÏ▒Ï® Ïº┘ä┘â┘à┘èÏ® Ïº┘ä┘àÏ¬┘ê┘üÏ▒Ï® */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>ÏÑÏ»ÏºÏ▒Ï® Ïº┘ä┘â┘à┘èÏ® Ïº┘ä┘àÏ¬┘ê┘üÏ▒Ï®</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, padding: '0 6px', borderRadius: 12, border: '2px solid #D1D5DB', background: '#FAFAFA', boxSizing: 'border-box' }}>
+                <button onClick={() => setQty(Math.max(0, qty - 1))} style={{ width: 32, height: 32, borderRadius: 8, background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={14} /></button>
+                <span style={{ fontSize: 24, fontWeight: 800, minWidth: 40, textAlign: 'center' }}>{qty}</span>
+                <button onClick={() => setQty(qty + 1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#f0f0f0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={14} /></button>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Ï│Ï╣Ï▒ Ïº┘äÏ¿┘èÏ╣ & Ï¬┘åÏ¿┘è┘ç ┘å┘éÏÁ (Ïú┘é┘ä ┘à┘å) */}
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 12 }}>
+            {/* Right field in RTL: Ï│Ï╣Ï▒ Ïº┘äÏ¿┘èÏ╣ (DA) */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>Ï│Ï╣Ï▒ Ïº┘äÏ¿┘èÏ╣ (DA)</label>
+              <input type="number" value={sellPrice} onChange={e => setSellPrice(e.target.value)} style={{ width: '100%', height: 48, padding: '0 12px', borderRadius: 12, border: '2px solid #D1D5DB', fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
+            </div>
+            {/* Left field in RTL: Ï¬┘åÏ¿┘è┘ç ┘å┘éÏÁ (Ïú┘é┘ä ┘à┘å) */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>Ï¬┘åÏ¿┘è┘ç ┘å┘éÏÁ (Ïú┘é┘ä ┘à┘å)</label>
+              <input type="number" value={minAlert} onChange={e => setMinAlert(e.target.value)} style={{ width: '100%', height: 48, padding: '0 12px', borderRadius: 12, border: '2px solid #D1D5DB', fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Ïº┘äÏ▒Ï¿Ï¡ Ïº┘ä┘àÏ¡┘é┘é */}
+        <div style={{ padding: '8px 14px', marginBottom: 24, fontSize: 13, color: C.gray, textAlign: 'right' }}>
+          Ïº┘äÏ▒Ï¿Ï¡ Ïº┘ä┘àÏ¡┘é┘é (DA): <span style={{ fontWeight: 700, color: profit >= 0 ? C.green : C.red }}>{profit.toFixed(2)}</span>
+        </div>
+
         {isEdit ? (
           <>
-            <button onClick={handleSave} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.green, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={18} /> حفظ التغييرات</button>
+            <button onClick={handleSave} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.green, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={18} /> Ï¡┘üÏ© Ïº┘äÏ¬Ï║┘è┘èÏ▒ÏºÏ¬</button>
             <div style={{ display: 'flex', gap: 10 }}>
               {product.is_active ? (
-                <button onClick={() => onToggle(product.id)} style={{ flex: 1, padding: '12px', borderRadius: 14, background: '#f0f0f0', color: C.gray, border: `1px solid ${C.border}`, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Power size={16} /> تعطيل</button>
+                <button onClick={() => onToggle(product.id)} style={{ flex: 1, padding: '12px', borderRadius: 14, background: '#f0f0f0', color: C.gray, border: `1px solid ${C.border}`, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Power size={16} /> Ï¬Ï╣ÏÀ┘è┘ä</button>
               ) : (
-                <button onClick={() => onRestore(product.id)} style={{ flex: 1, padding: '12px', borderRadius: 14, background: C.green, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><RotateCcw size={16} /> تفعيل</button>
+                <button onClick={() => onRestore(product.id)} style={{ flex: 1, padding: '12px', borderRadius: 14, background: C.green, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><RotateCcw size={16} /> Ï¬┘üÏ╣┘è┘ä</button>
               )}
-              <button onClick={() => onDelete(product.id)} style={{ flex: 1, padding: '12px', borderRadius: 14, background: product.is_active ? C.orange : C.red, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Power size={16} /> {product.is_active ? 'حذف (تعطيل)' : 'معطل بالفعل'}</button>
+              <button onClick={() => onDelete(product.id)} style={{ flex: 1, padding: '12px', borderRadius: 14, background: product.is_active ? C.orange : C.red, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Power size={16} /> {product.is_active ? 'Ï¡Ï░┘ü (Ï¬Ï╣ÏÀ┘è┘ä)' : '┘àÏ╣ÏÀ┘ä Ï¿Ïº┘ä┘üÏ╣┘ä'}</button>
             </div>
           </>
         ) : (
-          <button onClick={handleSave} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.blue, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={18} /> حفظ المنتج</button>
+          <button onClick={handleSave} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.blue, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Save size={18} /> Ï¡┘üÏ© Ïº┘ä┘à┘åÏ¬Ï¼</button>
         )}
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
    SHARED MODAL CARD
-   ═══════════════════════════════════════════ */
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function ModalCard({ title, onClose, children, locked = false }) {
   return (
     <>
@@ -2221,18 +2364,16 @@ function ModalCard({ title, onClose, children, locked = false }) {
 const modalInputStyle = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' };
 const modalLabelStyle = { fontSize: 13, fontWeight: 700, color: C.dark, marginBottom: 6, display: 'block', textAlign: 'right' };
 
-/* ═══════════════════════════════════════════
-   SCREEN: STOCK CHECK (المخزون المسائي)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN: STOCK CHECK (Ïº┘ä┘àÏ«Ï▓┘ê┘å Ïº┘ä┘àÏ│ÏºÏª┘è)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 export function StockScreen({ ingredients, setIngredients, showSuccess }) {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newIng, setNewIng] = useState({ name: '', unit: 'غ', cost_per_unit: '', starting_stock: '', emoji: '📦', image: '' });
+  const [newIng, setNewIng] = useState({ name: '', unit: 'Ï║', cost_per_unit: '', starting_stock: '', emoji: '­ƒôª' });
   const [detailIng, setDetailIng] = useState(null);
   const [detailDraft, setDetailDraft] = useState(null);
   const [confirmDeleteIng, setConfirmDeleteIng] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const imageInputRef = useRef(null);
-  const editImageInputRef = useRef(null);
 
   const activeGroupAdd = UNIT_GROUPS.find(g => g.units.includes(newIng.unit))?.id || 'weight';
   const activeGroupEdit = detailDraft ? (UNIT_GROUPS.find(g => g.units.includes(detailDraft.unit))?.id || 'weight') : 'weight';
@@ -2241,16 +2382,16 @@ export function StockScreen({ ingredients, setIngredients, showSuccess }) {
     const name = newIng.name.trim();
     if (!name) return;
     const id = Math.max(0, ...ingredients.map(i => i.id)) + 1;
-    setIngredients(prev => [...prev, { id, name, unit: newIng.unit, cost_per_unit: Number(newIng.cost_per_unit) || 0, starting_stock: Number(newIng.starting_stock) || 0, sales_deducted: 0, taken_deducted: 0, emoji: newIng.emoji, image: newIng.image || '' }]);
+    setIngredients(prev => [...prev, { id, name, unit: newIng.unit, cost_per_unit: Number(newIng.cost_per_unit) || 0, starting_stock: Number(newIng.starting_stock) || 0, sales_deducted: 0, taken_deducted: 0, emoji: newIng.emoji }]);
     setShowAddModal(false);
     setShowEmojiPicker(false);
-    setNewIng({ name: '', unit: 'غ', cost_per_unit: '', starting_stock: '', emoji: '📦', image: '' });
-    showSuccess('تمت إضافة المكوّن ✓');
+    setNewIng({ name: '', unit: 'Ï║', cost_per_unit: '', starting_stock: '', emoji: '­ƒôª' });
+    showSuccess('Ï¬┘àÏ¬ ÏÑÏÂÏº┘üÏ® Ïº┘ä┘à┘â┘ê┘æ┘å Ô£ô');
   };
 
   const openDetail = (ing) => {
     setDetailIng(ing);
-    setDetailDraft({ name: ing.name, unit: ing.unit, cost_per_unit: String(ing.cost_per_unit), emoji: ing.emoji || '📦', image: ing.image || '' });
+    setDetailDraft({ name: ing.name, unit: ing.unit, cost_per_unit: String(ing.cost_per_unit), emoji: ing.emoji || '­ƒôª' });
     setConfirmDeleteIng(false);
     setShowEmojiPicker(false);
   };
@@ -2258,29 +2399,29 @@ export function StockScreen({ ingredients, setIngredients, showSuccess }) {
   const handleSaveDetail = () => {
     const name = detailDraft.name.trim();
     if (!name) return;
-    setIngredients(prev => prev.map(i => i.id === detailIng.id ? { ...i, name, unit: detailDraft.unit, cost_per_unit: Number(detailDraft.cost_per_unit) || 0, emoji: detailDraft.emoji, image: detailDraft.image !== undefined ? detailDraft.image : i.image } : i));
+    setIngredients(prev => prev.map(i => i.id === detailIng.id ? { ...i, name, unit: detailDraft.unit, cost_per_unit: Number(detailDraft.cost_per_unit) || 0, emoji: detailDraft.emoji } : i));
     setDetailIng(null);
-    showSuccess('تم حفظ التغييرات ✓');
+    showSuccess('Ï¬┘à Ï¡┘üÏ© Ïº┘äÏ¬Ï║┘è┘èÏ▒ÏºÏ¬ Ô£ô');
   };
 
   const handleDeleteIngredient = () => {
     setIngredients(prev => prev.filter(i => i.id !== detailIng.id));
     setDetailIng(null);
-    showSuccess('تم حذف المكوّن ✓');
+    showSuccess('Ï¬┘à Ï¡Ï░┘ü Ïº┘ä┘à┘â┘ê┘æ┘å Ô£ô');
   };
 
   const mappedIngredients = useMemo(() => ingredients.map(ing => ({
     id: ing.id,
     name: ing.name,
-    category: 'المكونات',
+    category: 'Ïº┘ä┘à┘â┘ê┘åÏºÏ¬',
     is_active: true,
     qty: getExpectedQty(ing),
     buyPrice: Number(ing.cost_per_unit) || 0,
     sellPrice: Number(ing.cost_per_unit) || 0,
     minAlert: 5,
-    emoji: ing.emoji || '📦',
+    emoji: ing.emoji || '­ƒôª',
     unit: ing.unit,
-    image: ing.image || initialIngredients.find(i => i.id === ing.id)?.image || '',
+    image: '',
     rawIng: ing
   })), [ingredients]);
 
@@ -2294,69 +2435,26 @@ export function StockScreen({ ingredients, setIngredients, showSuccess }) {
 
     return (
       <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', overflowY: 'auto', direction: 'rtl' }}>
-        <AppHeader
-          title={isEdit ? "تعديل المكوّن" : "إضافة مكوّن"}
-          left={<HeaderIconButton label="رجوع" onClick={onClose}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
-          border
+        <AppHeader 
+          title={isEdit ? "Ï¬Ï╣Ï»┘è┘ä Ïº┘ä┘à┘â┘ê┘æ┘å" : "ÏÑÏÂÏº┘üÏ® ┘à┘â┘ê┘æ┘å"} 
+          left={<HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onClose}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>} 
+          border 
         />
         <div style={{ padding: '24px 16px', paddingBottom: 100 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-            {/* Image upload area */}
-            <div
-              onClick={() => (isEdit ? editImageInputRef : imageInputRef).current?.click()}
-              style={{
-                width: 110, height: 110, borderRadius: 24, background: '#F8FAFC',
-                border: `2px dashed ${C.blue}`, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', overflow: 'hidden',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.06)', cursor: 'pointer', position: 'relative'
-              }}
-            >
-              {draft.image ? (
-                <img src={draft.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              ) : (
-                <span style={{ fontSize: 48 }}>{draft.emoji}</span>
-              )}
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(37,99,235,0.75)',
-                color: '#fff', fontSize: 10, fontWeight: 700, textAlign: 'center', padding: '4px 0'
-              }}>تغيير الصورة</div>
+            <div onClick={() => setShowEmojiPicker(!showEmojiPicker)} style={{ width: 110, height: 110, borderRadius: 24, background: '#fff', border: `2px dashed ${C.blue}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', cursor: 'pointer' }}>
+              <span style={{ fontSize: 48 }}>{draft.emoji}</span>
             </div>
-            <input
-              ref={isEdit ? editImageInputRef : imageInputRef}
-              type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => setDraft({ ...draft, image: ev.target.result });
-                reader.readAsDataURL(file);
-              }}
-            />
-            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-              <button
-                type="button"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                style={{ fontSize: 12, color: C.blue, background: 'none', border: `1px solid ${C.blue}`, borderRadius: 8, padding: '4px 12px', cursor: 'pointer', fontWeight: 700 }}
-              >
-                {showEmojiPicker ? 'إخفاء الرموز' : 'تغيير الرمز'}
-              </button>
-              {draft.image && (
-                <button
-                  type="button"
-                  onClick={() => setDraft({ ...draft, image: '' })}
-                  style={{ fontSize: 12, color: C.red, background: 'none', border: `1px solid ${C.red}`, borderRadius: 8, padding: '4px 12px', cursor: 'pointer', fontWeight: 700 }}
-                >
-                  حذف الصورة
-                </button>
-              )}
-            </div>
+            {!showEmojiPicker && (
+              <span style={{ fontSize: 13, color: C.gray, marginTop: 8, fontWeight: 700 }}>Ïº┘å┘éÏ▒ ┘äÏ¬Ï║┘è┘èÏ▒ Ïº┘äÏ▒┘àÏ▓</span>
+            )}
           </div>
 
           {showEmojiPicker && (
             <div style={{ marginBottom: 20, animation: 'fadeIn 0.2s ease' }}>
-              <label style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 8, display: 'block', textAlign: 'right' }}>اختر رمزاً للمكوّن</label>
+              <label style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 8, display: 'block', textAlign: 'right' }}>ÏºÏ«Ï¬Ï▒ Ï▒┘àÏ▓Ïº┘ï ┘ä┘ä┘à┘â┘ê┘æ┘å</label>
               <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, direction: 'rtl', scrollbarWidth: 'none' }}>
-                {['📦', '🥫', '🥛', '🥩', '🍔', '🍕', '🍟', '🥤', '☕', '🍰', '🥐', '🍎', '🥕', '🍅', '🧅', '🌶️', '🧀', '🍗', '🍚', '🥖', '🥪', '🥗'].map(e => (
+                {['­ƒôª', '­ƒÑ½', '­ƒÑø', '­ƒÑ®', '­ƒìö', '­ƒìò', '­ƒìƒ', '­ƒÑñ', 'Ôÿò', '­ƒì░', '­ƒÑÉ', '­ƒìÄ', '­ƒÑò', '­ƒìà', '­ƒºà', '­ƒîÂ´©Å', '­ƒºÇ', '­ƒìù', '­ƒìÜ', '­ƒÑû', '­ƒÑ¬', '­ƒÑù'].map(e => (
                   <button key={e} type="button" onClick={() => { setDraft({ ...draft, emoji: e }); setShowEmojiPicker(false); }} style={{ fontSize: 28, padding: '10px 14px', background: draft.emoji === e ? '#EFF6FF' : '#fff', border: draft.emoji === e ? `2px solid ${C.blue}` : `1px solid ${C.border}`, borderRadius: 16, cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{e}</button>
                 ))}
               </div>
@@ -2364,51 +2462,51 @@ export function StockScreen({ ingredients, setIngredients, showSuccess }) {
           )}
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>اسم المكوّن</label>
-            <input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="أدخل اسم المكوّن" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
+            <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>ÏºÏ│┘à Ïº┘ä┘à┘â┘ê┘æ┘å</label>
+            <input value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} placeholder="ÏúÏ»Ï«┘ä ÏºÏ│┘à Ïº┘ä┘à┘â┘ê┘æ┘å" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
             <div style={{ display: 'flex', flexDirection: 'row', gap: 12 }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>تكلفة الوحدة (دج)</label>
+                <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>Ï¬┘â┘ä┘üÏ® Ïº┘ä┘êÏ¡Ï»Ï® (Ï»Ï¼)</label>
                 <input type="number" inputMode="decimal" value={draft.cost_per_unit} onChange={e => setDraft({ ...draft, cost_per_unit: e.target.value })} style={{ width: '100%', height: 48, padding: '0 12px', borderRadius: 12, border: '2px solid #D1D5DB', fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} />
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>المخزون الابتدائي</label>
+                <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 6, display: 'block', textAlign: 'right' }}>Ïº┘ä┘àÏ«Ï▓┘ê┘å Ïº┘äÏºÏ¿Ï¬Ï»ÏºÏª┘è</label>
                 <input type="number" inputMode="decimal" value={draft.starting_stock === undefined ? '' : draft.starting_stock} onChange={e => setDraft({ ...draft, starting_stock: e.target.value })} style={{ width: '100%', height: 48, padding: '0 12px', borderRadius: 12, border: '2px solid #D1D5DB', fontSize: 16, fontWeight: 700, outline: 'none', textAlign: 'center', background: '#FAFAFA', boxSizing: 'border-box' }} disabled={isEdit} />
               </div>
             </div>
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 8, display: 'block', textAlign: 'right' }}>وحدة القياس المعتمدة</label>
+            <label style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 8, display: 'block', textAlign: 'right' }}>┘êÏ¡Ï»Ï® Ïº┘ä┘é┘èÏºÏ│ Ïº┘ä┘àÏ╣Ï¬┘àÏ»Ï®</label>
             <div style={{ display: 'flex', gap: 6, marginBottom: 8, background: '#F3F4F6', padding: 4, borderRadius: 12 }}>
               {UNIT_GROUPS.map(g => (
-                <button key={g.id} type="button" onClick={() => setDraft({ ...draft, unit: g.units[0] })} style={{ flex: 1, padding: '8px', borderRadius: 10, border: 'none', background: activeGroup === g.id ? '#fff' : 'transparent', color: activeGroup === g.id ? C.blue : C.gray, fontSize: 13, fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: activeGroup === g.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }}>
+                <button key={g.id} type="button" onClick={() => setDraft({...draft, unit: g.units[0]})} style={{ flex: 1, padding: '8px', borderRadius: 10, border: 'none', background: activeGroup === g.id ? '#fff' : 'transparent', color: activeGroup === g.id ? C.blue : C.gray, fontSize: 13, fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: activeGroup === g.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }}>
                   {g.label}
                 </button>
               ))}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, animation: 'fadeIn 0.3s ease' }}>
               {UNIT_GROUPS.find(g => g.id === activeGroup).units.map(u => (
-                <button key={u} type="button" onClick={() => setDraft({ ...draft, unit: u })} style={{ padding: '10px', borderRadius: 10, border: draft.unit === u ? `2px solid ${C.blue}` : `1px solid ${C.border}`, background: draft.unit === u ? '#EFF6FF' : '#FAFAFA', color: draft.unit === u ? C.blue : C.dark, fontSize: 15, fontWeight: 800, cursor: 'pointer', flex: '1 0 calc(33.33% - 6px)', transition: 'all 0.2s' }}>
+                <button key={u} type="button" onClick={() => setDraft({...draft, unit: u})} style={{ padding: '10px', borderRadius: 10, border: draft.unit === u ? `2px solid ${C.blue}` : `1px solid ${C.border}`, background: draft.unit === u ? '#EFF6FF' : '#FAFAFA', color: draft.unit === u ? C.blue : C.dark, fontSize: 15, fontWeight: 800, cursor: 'pointer', flex: '1 0 calc(33.33% - 6px)', transition: 'all 0.2s' }}>
                   {u}
                 </button>
               ))}
             </div>
           </div>
 
-          <button onClick={onSave} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.blue, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}><Save size={18} /> {isEdit ? 'حفظ التغييرات' : 'حفظ المكوّن'}</button>
-
+          <button onClick={onSave} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.blue, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}><Save size={18} /> {isEdit ? 'Ï¡┘üÏ© Ïº┘äÏ¬Ï║┘è┘èÏ▒ÏºÏ¬' : 'Ï¡┘üÏ© Ïº┘ä┘à┘â┘ê┘æ┘å'}</button>
+          
           {isEdit && (
             confirmDeleteIng ? (
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={handleDeleteIngredient} style={{ flex: 1, padding: '14px', borderRadius: 14, background: C.red, color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>تأكيد الحذف</button>
-                <button onClick={() => setConfirmDeleteIng(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, background: '#f0f0f0', color: C.dark, border: `1px solid ${C.border}`, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+                <button onClick={handleDeleteIngredient} style={{ flex: 1, padding: '14px', borderRadius: 14, background: C.red, color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>Ï¬Ïú┘â┘èÏ» Ïº┘äÏ¡Ï░┘ü</button>
+                <button onClick={() => setConfirmDeleteIng(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, background: '#f0f0f0', color: C.dark, border: `1px solid ${C.border}`, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
               </div>
             ) : (
-              <button onClick={() => setConfirmDeleteIng(true)} style={{ width: '100%', padding: '14px', borderRadius: 14, background: '#FEF2F2', color: C.red, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Trash2 size={18} /> حذف المكوّن</button>
+              <button onClick={() => setConfirmDeleteIng(true)} style={{ width: '100%', padding: '14px', borderRadius: 14, background: '#FEF2F2', color: C.red, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Trash2 size={18} /> Ï¡Ï░┘ü Ïº┘ä┘à┘â┘ê┘æ┘å</button>
             )
           )}
         </div>
@@ -2417,21 +2515,21 @@ export function StockScreen({ ingredients, setIngredients, showSuccess }) {
   }
 
   return (
-    <InventoryScreen
+    <InventoryScreen 
       products={mappedIngredients}
-      categories={['المكونات']}
-      onAddCategory={() => { }}
-      onRenameCategory={() => { }}
-      onDeleteCategory={() => { }}
+      categories={['Ïº┘ä┘à┘â┘ê┘åÏºÏ¬']}
+      onAddCategory={() => {}}
+      onRenameCategory={() => {}}
+      onDeleteCategory={() => {}}
       onAddProduct={() => setShowAddModal(true)}
       onEditProduct={(p) => openDetail(p.rawIng)}
     />
   );
 }
 
-/* ═══════════════════════════════════════════
-   SCREEN: PRODUCT DETAIL (تفاصيل المنتج)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN: PRODUCT DETAIL (Ï¬┘üÏºÏÁ┘è┘ä Ïº┘ä┘à┘åÏ¬Ï¼)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 export function ProductDetailScreen({ product, products, setProducts, ingredients, productRecipes, setProductRecipes, todaySales, showSuccess, onBack }) {
   const current = products.find(p => p.id === product?.id) || product;
   const [showAddRecipe, setShowAddRecipe] = useState(false);
@@ -2454,7 +2552,7 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
   const profit = sellPrice - totalCost;
   const margin = sellPrice > 0 ? (profit / sellPrice) * 100 : 0;
   const marginColor = margin > 40 ? C.green : margin >= 20 ? C.orange : C.red;
-  const marginLabel = margin > 40 ? 'صحي' : margin >= 20 ? 'منخفض' : 'خطر';
+  const marginLabel = margin > 40 ? 'ÏÁÏ¡┘è' : margin >= 20 ? '┘à┘åÏ«┘üÏÂ' : 'Ï«ÏÀÏ▒';
 
   const isBestSeller = useMemo(() => {
     const map = {};
@@ -2463,8 +2561,8 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
     return !!top && Number(top[0]) === current.id;
   }, [todaySales, current.id]);
 
-  const catColor = categoryColors[current.category] || categoryColors['أخرى'];
-  const imagePath = current.image;
+  const catColor = categoryColors[current.category] || categoryColors['ÏúÏ«Ï▒┘ë'];
+  const imagePath = current.image || productImageMap[current.id];
 
   const handleAddRecipeRow = () => {
     const ing = ingredients.find(i => i.id === Number(recipeIngId));
@@ -2475,7 +2573,7 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
     setShowAddRecipe(false);
     setRecipeIngId('');
     setRecipeQty('');
-    showSuccess('تمت إضافة المكوّن للوصفة ✓');
+    showSuccess('Ï¬┘àÏ¬ ÏÑÏÂÏº┘üÏ® Ïº┘ä┘à┘â┘ê┘æ┘å ┘ä┘ä┘êÏÁ┘üÏ® Ô£ô');
   };
 
   const handleDeleteRecipeRow = (recipeId) => {
@@ -2487,7 +2585,7 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
       }
       return remaining;
     });
-    showSuccess('تم حذف المكوّن من الوصفة ✓');
+    showSuccess('Ï¬┘à Ï¡Ï░┘ü Ïº┘ä┘à┘â┘ê┘æ┘å ┘à┘å Ïº┘ä┘êÏÁ┘üÏ® Ô£ô');
   };
 
   const handleSavePrice = () => {
@@ -2495,17 +2593,17 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
     if (!price || price <= 0) return;
     setProducts(prev => prev.map(p => p.id === current.id ? { ...p, sellPrice: price } : p));
     setEditingPrice(false);
-    showSuccess('تم تعديل السعر ✓');
+    showSuccess('Ï¬┘à Ï¬Ï╣Ï»┘è┘ä Ïº┘äÏ│Ï╣Ï▒ Ô£ô');
   };
 
   const handleToggleActive = () => {
     setProducts(prev => prev.map(p => p.id === current.id ? { ...p, is_active: !p.is_active } : p));
-    showSuccess(current.is_active ? 'تم تعطيل المنتج ✓' : 'تم تفعيل المنتج ✓');
+    showSuccess(current.is_active ? 'Ï¬┘à Ï¬Ï╣ÏÀ┘è┘ä Ïº┘ä┘à┘åÏ¬Ï¼ Ô£ô' : 'Ï¬┘à Ï¬┘üÏ╣┘è┘ä Ïº┘ä┘à┘åÏ¬Ï¼ Ô£ô');
   };
 
   const handleDelete = () => {
     setProducts(prev => prev.filter(p => p.id !== current.id));
-    showSuccess('تم حذف المنتج ✓');
+    showSuccess('Ï¬┘à Ï¡Ï░┘ü Ïº┘ä┘à┘åÏ¬Ï¼ Ô£ô');
     onBack();
   };
 
@@ -2517,7 +2615,7 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
     <div style={{ paddingBottom: 100, direction: 'rtl' }}>
       <AppHeader
         title={current.name}
-        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+        left={<HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
         border
       />
 
@@ -2532,41 +2630,41 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
         <div style={{ fontSize: 20, fontWeight: 800, color: C.dark }}>{current.name}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 8 }}>
           <span style={{ fontSize: 12, fontWeight: 800, color: catColor.accent, background: catColor.bg, padding: '4px 14px', borderRadius: 20 }}>{current.category}</span>
-          {isBestSeller && <span style={{ fontSize: 12, fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '4px 14px', borderRadius: 20 }}>⭐ الأكثر مبيعاً</span>}
-          {!current.is_active && <span style={{ fontSize: 12, fontWeight: 800, color: C.gray, background: '#F3F4F6', padding: '4px 14px', borderRadius: 20 }}>معطل</span>}
+          {isBestSeller && <span style={{ fontSize: 12, fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '4px 14px', borderRadius: 20 }}>Ô¡É Ïº┘äÏú┘âÏ½Ï▒ ┘àÏ¿┘èÏ╣Ïº┘ï</span>}
+          {!current.is_active && <span style={{ fontSize: 12, fontWeight: 800, color: C.gray, background: '#F3F4F6', padding: '4px 14px', borderRadius: 20 }}>┘àÏ╣ÏÀ┘ä</span>}
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, padding: '12px 16px' }}>
         {[
-          { label: 'التكلفة الإجمالية', value: totalCost, color: C.orange },
-          { label: 'سعر البيع', value: sellPrice, color: C.blue },
-          { label: 'الربح', value: profit, color: profit >= 0 ? C.green : C.red },
+          { label: 'Ïº┘äÏ¬┘â┘ä┘üÏ® Ïº┘äÏÑÏ¼┘àÏº┘ä┘èÏ®', value: totalCost, color: C.orange },
+          { label: 'Ï│Ï╣Ï▒ Ïº┘äÏ¿┘èÏ╣', value: sellPrice, color: C.blue },
+          { label: 'Ïº┘äÏ▒Ï¿Ï¡', value: profit, color: profit >= 0 ? C.green : C.red },
         ].map((box, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', boxShadow: C.shadow, textAlign: 'center' }}>
             <div style={{ fontSize: 11, color: C.gray, marginBottom: 6 }}>{box.label}</div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: box.color }}>{fmt(Math.round(box.value))} <span style={{ fontSize: 10 }}>دج</span></div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: box.color }}>{fmt(Math.round(box.value))} <span style={{ fontSize: 10 }}>Ï»Ï¼</span></div>
           </div>
         ))}
       </div>
 
       <div style={{ margin: '8px 16px', background: '#fff', borderRadius: C.radius, padding: '18px 16px', boxShadow: C.shadow }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>وصفة المنتج</h3>
-          <button onClick={() => setShowAddRecipe(true)} style={{ padding: '8px 14px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>إضافة مكوّن +</button>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>┘êÏÁ┘üÏ® Ïº┘ä┘à┘åÏ¬Ï¼</h3>
+          <button onClick={() => setShowAddRecipe(true)} style={{ padding: '8px 14px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>ÏÑÏÂÏº┘üÏ® ┘à┘â┘ê┘æ┘å +</button>
         </div>
         {recipe.length === 0 ? (
-          <div style={{ textAlign: 'center', color: C.gray, fontSize: 13, padding: '16px 0' }}>لا توجد مكوّنات في الوصفة بعد</div>
+          <div style={{ textAlign: 'center', color: C.gray, fontSize: 13, padding: '16px 0' }}>┘äÏº Ï¬┘êÏ¼Ï» ┘à┘â┘ê┘æ┘åÏºÏ¬ ┘ü┘è Ïº┘ä┘êÏÁ┘üÏ® Ï¿Ï╣Ï»</div>
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.2fr 0.8fr 0.6fr', padding: '6px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center' }}>
-              {['المكوّن', 'الكمية', 'التكلفة', '%', ''].map((h, idx) => <span key={idx} style={{ fontSize: 11, color: C.gray, fontWeight: 700 }}>{h}</span>)}
+              {['Ïº┘ä┘à┘â┘ê┘æ┘å', 'Ïº┘ä┘â┘à┘èÏ®', 'Ïº┘äÏ¬┘â┘ä┘üÏ®', '%', ''].map((h, idx) => <span key={idx} style={{ fontSize: 11, color: C.gray, fontWeight: 700 }}>{h}</span>)}
             </div>
             {recipe.map(r => (
               <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1.2fr 0.8fr 0.6fr', padding: '10px 0', borderBottom: `1px solid ${C.border}`, alignItems: 'center' }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>{r.ing.name}</span>
                 <span style={{ fontSize: 12, color: C.gray }}>{fmt(r.quantity_used)} {r.ing.unit}</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: C.dark }}>{fmt(Math.round(r.cost))} دج</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: C.dark }}>{fmt(Math.round(r.cost))} Ï»Ï¼</span>
                 <span style={{ fontSize: 12, fontWeight: 800, color: C.blue }}>{totalCost > 0 ? Math.round((r.cost / totalCost) * 100) : 0}%</span>
                 <button onClick={() => handleDeleteRecipeRow(r.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4 }}>
                   <Trash2 size={16} color={C.red} />
@@ -2578,7 +2676,7 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
       </div>
 
       <div style={{ margin: '8px 16px', background: '#fff', borderRadius: C.radius, padding: '20px 16px', boxShadow: C.shadow, textAlign: 'center' }}>
-        <h3 style={{ fontSize: 15, fontWeight: 800, color: C.dark, marginBottom: 14 }}>هامش الربح</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 800, color: C.dark, marginBottom: 14 }}>┘çÏº┘àÏ┤ Ïº┘äÏ▒Ï¿Ï¡</h3>
         <div style={{ position: 'relative', width: 120, height: 120, margin: '0 auto' }}>
           <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
             <circle cx="60" cy="60" r={R} fill="none" stroke="#F0F0F0" strokeWidth="10" />
@@ -2592,73 +2690,73 @@ export function ProductDetailScreen({ product, products, setProducts, ingredient
       <div style={{ margin: '8px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {editingPrice ? (
           <div style={{ background: '#fff', borderRadius: 14, padding: '12px', boxShadow: C.shadow, display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="number" inputMode="decimal" value={priceDraft} onChange={e => setPriceDraft(e.target.value)} autoFocus placeholder="السعر الجديد" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 15, fontWeight: 800, outline: 'none', textAlign: 'center', boxSizing: 'border-box', minWidth: 0 }} />
-            <button onClick={handleSavePrice} style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: C.green, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>حفظ</button>
-            <button onClick={() => setEditingPrice(false)} style={{ padding: '10px 14px', borderRadius: 10, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+            <input type="number" inputMode="decimal" value={priceDraft} onChange={e => setPriceDraft(e.target.value)} autoFocus placeholder="Ïº┘äÏ│Ï╣Ï▒ Ïº┘äÏ¼Ï»┘èÏ»" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 15, fontWeight: 800, outline: 'none', textAlign: 'center', boxSizing: 'border-box', minWidth: 0 }} />
+            <button onClick={handleSavePrice} style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: C.green, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Ï¡┘üÏ©</button>
+            <button onClick={() => setEditingPrice(false)} style={{ padding: '10px 14px', borderRadius: 10, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
           </div>
         ) : (
-          <button onClick={() => { setPriceDraft(String(sellPrice)); setEditingPrice(true); }} style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${C.blue}`, background: '#fff', color: C.blue, fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Pencil size={16} /> تعديل السعر</button>
+          <button onClick={() => { setPriceDraft(String(sellPrice)); setEditingPrice(true); }} style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${C.blue}`, background: '#fff', color: C.blue, fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Pencil size={16} /> Ï¬Ï╣Ï»┘è┘ä Ïº┘äÏ│Ï╣Ï▒</button>
         )}
-        <button onClick={handleToggleActive} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: current.is_active ? '#F3F4F6' : C.green, color: current.is_active ? C.dark : '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Power size={16} /> {current.is_active ? 'تعطيل المنتج' : 'تفعيل المنتج'}</button>
+        <button onClick={handleToggleActive} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: current.is_active ? '#F3F4F6' : C.green, color: current.is_active ? C.dark : '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Power size={16} /> {current.is_active ? 'Ï¬Ï╣ÏÀ┘è┘ä Ïº┘ä┘à┘åÏ¬Ï¼' : 'Ï¬┘üÏ╣┘è┘ä Ïº┘ä┘à┘åÏ¬Ï¼'}</button>
         {confirmDelete ? (
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={handleDelete} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.red, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>تأكيد الحذف</button>
-            <button onClick={() => setConfirmDelete(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>إلغاء</button>
+            <button onClick={handleDelete} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.red, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>Ï¬Ïú┘â┘èÏ» Ïº┘äÏ¡Ï░┘ü</button>
+            <button onClick={() => setConfirmDelete(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
           </div>
         ) : (
-          <button onClick={() => setConfirmDelete(true)} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: '#FEE2E2', color: C.red, fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Trash2 size={16} /> حذف المنتج</button>
+          <button onClick={() => setConfirmDelete(true)} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: '#FEE2E2', color: C.red, fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Trash2 size={16} /> Ï¡Ï░┘ü Ïº┘ä┘à┘åÏ¬Ï¼</button>
         )}
       </div>
 
       {showAddRecipe && (
-        <ModalCard title="إضافة مكوّن للوصفة" onClose={() => setShowAddRecipe(false)}>
-          <label style={modalLabelStyle}>المكوّن</label>
+        <ModalCard title="ÏÑÏÂÏº┘üÏ® ┘à┘â┘ê┘æ┘å ┘ä┘ä┘êÏÁ┘üÏ®" onClose={() => setShowAddRecipe(false)}>
+          <label style={modalLabelStyle}>Ïº┘ä┘à┘â┘ê┘æ┘å</label>
           <select value={recipeIngId} onChange={e => setRecipeIngId(e.target.value)} style={{ ...modalInputStyle, marginBottom: 12 }}>
-            <option value="">اختر المكوّن...</option>
+            <option value="">ÏºÏ«Ï¬Ï▒ Ïº┘ä┘à┘â┘ê┘æ┘å...</option>
             {ingredients.map(i => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
           </select>
-          <label style={modalLabelStyle}>الكمية لكل وحدة مباعة</label>
+          <label style={modalLabelStyle}>Ïº┘ä┘â┘à┘èÏ® ┘ä┘â┘ä ┘êÏ¡Ï»Ï® ┘àÏ¿ÏºÏ╣Ï®</label>
           <input type="number" inputMode="decimal" value={recipeQty} onChange={e => setRecipeQty(e.target.value)} placeholder="0" style={{ ...modalInputStyle, marginBottom: 16 }} />
-          <button onClick={handleAddRecipeRow} style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>تأكيد</button>
+          <button onClick={handleAddRecipeRow} style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>Ï¬Ïú┘â┘èÏ»</button>
         </ModalCard>
       )}
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════
-   SCREEN: MORE (المزيد)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN: MORE (Ïº┘ä┘àÏ▓┘èÏ»)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 export function MoreScreen({ onOpenReports, onOpenPage }) {
   const groups = [
     {
-      title: 'المالية',
+      title: 'Ïº┘ä┘àÏº┘ä┘èÏ®',
       items: [
-        { label: 'الديون', icon: Wallet, color: C.red, bg: '#FEE2E2', action: () => onOpenPage('الديون') },
-        { label: 'المصاريف', icon: Receipt, color: C.orange, bg: '#FFF7ED', action: () => onOpenPage('المصاريف') },
+        { label: 'Ïº┘äÏ»┘è┘ê┘å', icon: Wallet, color: C.red, bg: '#FEE2E2', action: () => onOpenPage('Ïº┘äÏ»┘è┘ê┘å') },
+        { label: 'Ïº┘ä┘àÏÁÏºÏ▒┘è┘ü', icon: Receipt, color: C.orange, bg: '#FFF7ED', action: () => onOpenPage('Ïº┘ä┘àÏÁÏºÏ▒┘è┘ü') },
       ],
     },
     {
-      title: 'الإدارة',
+      title: 'Ïº┘äÏÑÏ»ÏºÏ▒Ï®',
       items: [
-        { label: 'العملاء', icon: Users, color: C.blue, bg: '#EFF6FF', action: () => onOpenPage('العملاء') },
-        { label: 'الموردون', icon: Truck, color: C.orange, bg: '#FFF7ED', action: () => onOpenPage('الموردون') },
-        { label: 'التقارير', icon: BarChart3, color: C.green, bg: '#F0FDF4', action: () => onOpenReports() },
+        { label: 'Ïº┘äÏ╣┘à┘äÏºÏí', icon: Users, color: C.blue, bg: '#EFF6FF', action: () => onOpenPage('Ïº┘äÏ╣┘à┘äÏºÏí') },
+        { label: 'Ïº┘ä┘à┘êÏ▒Ï»┘ê┘å', icon: Truck, color: C.orange, bg: '#FFF7ED', action: () => onOpenPage('Ïº┘ä┘à┘êÏ▒Ï»┘ê┘å') },
+        { label: 'Ïº┘äÏ¬┘éÏºÏ▒┘èÏ▒', icon: BarChart3, color: C.green, bg: '#F0FDF4', action: () => onOpenReports() },
       ],
     },
     {
-      title: 'النظام',
+      title: 'Ïº┘ä┘åÏ©Ïº┘à',
       items: [
-        { label: 'الإعدادات', icon: Settings, color: C.dark, bg: '#F3F4F6', action: () => onOpenPage('الإعدادات') },
-        { label: 'الدعم', icon: HelpCircle, color: C.blue, bg: '#EFF6FF', action: () => onOpenPage('الدعم') },
-        { label: 'دروس تعليمية', icon: BookOpen, color: C.green, bg: '#F0FDF4', action: () => onOpenPage('دروس تعليمية') },
+        { label: 'Ïº┘äÏÑÏ╣Ï»ÏºÏ»ÏºÏ¬', icon: Settings, color: C.dark, bg: '#F3F4F6', action: () => onOpenPage('Ïº┘äÏÑÏ╣Ï»ÏºÏ»ÏºÏ¬') },
+        { label: 'Ïº┘äÏ»Ï╣┘à', icon: HelpCircle, color: C.blue, bg: '#EFF6FF', action: () => onOpenPage('Ïº┘äÏ»Ï╣┘à') },
+        { label: 'Ï»Ï▒┘êÏ│ Ï¬Ï╣┘ä┘è┘à┘èÏ®', icon: BookOpen, color: C.green, bg: '#F0FDF4', action: () => onOpenPage('Ï»Ï▒┘êÏ│ Ï¬Ï╣┘ä┘è┘à┘èÏ®') },
       ],
     },
   ];
 
   return (
     <div style={{ paddingBottom: 100, direction: 'rtl', minHeight: '100vh', background: C.bg }}>
-      <AppHeader title="المزيد" />
+      <AppHeader title="Ïº┘ä┘àÏ▓┘èÏ»" />
       {groups.map(group => (
         <div key={group.title} style={{ padding: '8px 16px' }}>
           <h3 style={{ fontSize: 14, fontWeight: 800, color: C.gray, marginBottom: 10, textAlign: 'right' }}>{group.title}</h3>
@@ -2681,9 +2779,9 @@ export function MoreScreen({ onOpenReports, onOpenPage }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   RECEIPT MODAL (الفاتورة)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   RECEIPT MODAL (Ïº┘ä┘üÏºÏ¬┘êÏ▒Ï®)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 const Dashed = () => <div style={{ borderTop: '2px dashed #E5E7EB', margin: '14px 0' }} />;
 
 export function ReceiptModal({ receipt, shopName, onClose }) {
@@ -2692,14 +2790,14 @@ export function ReceiptModal({ receipt, shopName, onClose }) {
   const itemTotal = (it) => it.total ?? (Number(it.qty) || 0) * (Number(it.price) || 0);
 
   const shareWhatsApp = () => {
-    let text = `🧾 فاتورة - ${shopName}\n`;
-    text += `📅 ${receipt.dateText} ${receipt.timeText}\n`;
-    text += `رقم: ${receipt.number}\n`;
-    text += `─────────────\n`;
-    items.forEach(it => { text += `${it.name} × ${it.qty} = ${fmt(itemTotal(it))} DA\n`; });
-    text += `─────────────\n`;
-    text += `💰 المجموع: ${fmt(receipt.total)} DA\n`;
-    text += `شكراً لزيارتكم`;
+    let text = `­ƒº¥ ┘üÏºÏ¬┘êÏ▒Ï® - ${shopName}\n`;
+    text += `­ƒôà ${receipt.dateText} ${receipt.timeText}\n`;
+    text += `Ï▒┘é┘à: ${receipt.number}\n`;
+    text += `ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ\n`;
+    items.forEach(it => { text += `${it.name} ├ù ${it.qty} = ${fmt(itemTotal(it))} DA\n`; });
+    text += `ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ\n`;
+    text += `­ƒÆ░ Ïº┘ä┘àÏ¼┘à┘êÏ╣: ${fmt(receipt.total)} DA\n`;
+    text += `Ï┤┘âÏ▒Ïº┘ï ┘äÏ▓┘èÏºÏ▒Ï¬┘â┘à`;
     window.open(`whatsapp://send?text=${encodeURIComponent(text)}`);
   };
 
@@ -2707,37 +2805,37 @@ export function ReceiptModal({ receipt, shopName, onClose }) {
     <>
       {/* Dark Overlay */}
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, animation: 'fadeIn 0.2s ease' }} />
-
+      
       {/* Centered Receipt Card Container */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 301, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', direction: 'rtl', paddingBottom: 60 }}>
-
+        
         {/* The White Ticket */}
         <div style={{ position: 'relative', width: 'min(340px, 92vw)', background: '#fff', borderRadius: 24, padding: '48px 24px 24px', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', pointerEvents: 'auto' }}>
-
+          
           {/* Logo Circle Overlapping */}
           <div style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', width: 60, height: 60, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-            <span style={{ fontSize: 24, fontWeight: 900, color: C.blue }}>{shopName.charAt(0)}</span>
+             <span style={{ fontSize: 24, fontWeight: 900, color: C.blue }}>{shopName.charAt(0)}</span>
           </div>
 
           <h2 style={{ fontSize: 22, fontWeight: 900, color: C.dark, textAlign: 'center', marginBottom: 16 }}>{shopName}</h2>
           <Dashed />
-
+          
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: C.gray, marginTop: 12 }}>
-            <span>التاريخ</span>
+            <span>Ïº┘äÏ¬ÏºÏ▒┘èÏ«</span>
             <span style={{ color: C.dark, fontWeight: 700, direction: 'ltr' }}>{receipt.dateText} {receipt.timeText}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: C.gray, marginTop: 6 }}>
-            <span>رقم الفاتورة</span>
+            <span>Ï▒┘é┘à Ïº┘ä┘üÏºÏ¬┘êÏ▒Ï®</span>
             <span style={{ color: C.dark, fontWeight: 700 }}>{receipt.number}</span>
           </div>
 
           <Dashed />
 
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 1fr 1fr', padding: '4px 0 8px', borderBottom: `1px solid ${C.border}` }}>
-            <span style={{ fontSize: 12, color: C.gray, fontWeight: 800, textAlign: 'right' }}>المنتج</span>
-            <span style={{ fontSize: 12, color: C.gray, fontWeight: 800, textAlign: 'center' }}>الكمية</span>
-            <span style={{ fontSize: 12, color: C.gray, fontWeight: 800, textAlign: 'center' }}>السعر</span>
-            <span style={{ fontSize: 12, color: C.gray, fontWeight: 800, textAlign: 'left' }}>المجموع</span>
+            <span style={{ fontSize: 12, color: C.gray, fontWeight: 800, textAlign: 'right' }}>Ïº┘ä┘à┘åÏ¬Ï¼</span>
+            <span style={{ fontSize: 12, color: C.gray, fontWeight: 800, textAlign: 'center' }}>Ïº┘ä┘â┘à┘èÏ®</span>
+            <span style={{ fontSize: 12, color: C.gray, fontWeight: 800, textAlign: 'center' }}>Ïº┘äÏ│Ï╣Ï▒</span>
+            <span style={{ fontSize: 12, color: C.gray, fontWeight: 800, textAlign: 'left' }}>Ïº┘ä┘àÏ¼┘à┘êÏ╣</span>
           </div>
 
           <div style={{ maxHeight: '30vh', overflowY: 'auto', paddingRight: 4 }}>
@@ -2754,47 +2852,47 @@ export function ReceiptModal({ receipt, shopName, onClose }) {
           <Dashed />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: C.gray, alignItems: 'center' }}>
-            <span>المجموع الفرعي</span>
+            <span>Ïº┘ä┘àÏ¼┘à┘êÏ╣ Ïº┘ä┘üÏ▒Ï╣┘è</span>
             <span style={{ color: C.dark, fontWeight: 700, direction: 'ltr' }}>{fmt(receipt.total)} DA</span>
           </div>
-
+          
           <div style={{ borderTop: `2px solid ${C.dark}`, margin: '12px 0' }} />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 900, alignItems: 'center' }}>
-            <span style={{ color: C.dark }}>الإجمالي</span>
+            <span style={{ color: C.dark }}>Ïº┘äÏÑÏ¼┘àÏº┘ä┘è</span>
             <span style={{ color: C.dark, direction: 'ltr' }}>{fmt(receipt.total)} DA</span>
           </div>
 
           <Dashed />
-
+          
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginTop: 8 }}>
-            <span style={{ color: C.gray }}>طريقة الدفع</span>
-            <span style={{ fontWeight: 800, color: C.dark }}>{receipt.paymentMethod || 'كاش (نقداً)'}</span>
+            <span style={{ color: C.gray }}>ÏÀÏ▒┘è┘éÏ® Ïº┘äÏ»┘üÏ╣</span>
+            <span style={{ fontWeight: 800, color: C.dark }}>{receipt.paymentMethod || '┘âÏºÏ┤ (┘å┘éÏ»Ïº┘ï)'}</span>
           </div>
-
-          <div style={{ textAlign: 'center', fontStyle: 'italic', fontSize: 14, fontWeight: 600, color: C.gray, marginTop: 24 }}>شكراً لتسوقكم معنا!</div>
+          
+          <div style={{ textAlign: 'center', fontStyle: 'italic', fontSize: 14, fontWeight: 600, color: C.gray, marginTop: 24 }}>Ï┤┘âÏ▒Ïº┘ï ┘äÏ¬Ï│┘ê┘é┘â┘à ┘àÏ╣┘åÏº!</div>
         </div>
       </div>
 
       {/* The Bottom Actions Panel */}
       <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 24px 32px', zIndex: 302, display: 'flex', gap: 16, alignItems: 'center', boxShadow: '0 -4px 24px rgba(0,0,0,0.1)', animation: 'slideUp 0.3s ease', direction: 'rtl' }}>
-
+        
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <button onClick={() => window.print()} style={{ width: 52, height: 52, borderRadius: '50%', border: 'none', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <Printer size={22} color={C.blue} />
           </button>
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.blue }}>طباعة</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.blue }}>ÏÀÏ¿ÏºÏ╣Ï®</span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <button onClick={shareWhatsApp} style={{ width: 52, height: 52, borderRadius: '50%', border: 'none', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <Share2 size={22} color={C.blue} />
           </button>
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.blue }}>مشاركة</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.blue }}>┘àÏ┤ÏºÏ▒┘âÏ®</span>
         </div>
-
+        
         <button onClick={onClose} style={{ flex: 1, marginRight: 12, height: 56, borderRadius: 16, border: 'none', background: C.blue, color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>
-          <Check size={20} strokeWidth={3} /> تم (إغلاق)
+          <Check size={20} strokeWidth={3} /> Ï¬┘à (ÏÑÏ║┘äÏº┘é)
         </button>
 
       </div>
@@ -2802,17 +2900,17 @@ export function ReceiptModal({ receipt, shopName, onClose }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   SCREEN: EXPENSES (المصاريف)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN: EXPENSES (Ïº┘ä┘àÏÁÏºÏ▒┘è┘ü)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 const EXPENSE_CATEGORIES = [
-  { id: 'rent', label: 'الكراء', icon: '🏠' },
-  { id: 'salary', label: 'الرواتب', icon: '👥' },
-  { id: 'bills', label: 'الفواتير', icon: '⚡' },
-  { id: 'transport', label: 'النقل', icon: '🚚' },
-  { id: 'supplies', label: 'اللوازم', icon: '🛒' },
-  { id: 'maintenance', label: 'الصيانة', icon: '🔧' },
-  { id: 'other', label: 'أخرى', icon: '💬' },
+  { id: 'rent', label: 'Ïº┘ä┘âÏ▒ÏºÏí', icon: '­ƒÅá' },
+  { id: 'salary', label: 'Ïº┘äÏ▒┘êÏºÏ¬Ï¿', icon: '­ƒæÑ' },
+  { id: 'bills', label: 'Ïº┘ä┘ü┘êÏºÏ¬┘èÏ▒', icon: 'ÔÜí' },
+  { id: 'transport', label: 'Ïº┘ä┘å┘é┘ä', icon: '­ƒÜÜ' },
+  { id: 'supplies', label: 'Ïº┘ä┘ä┘êÏºÏ▓┘à', icon: '­ƒøÆ' },
+  { id: 'maintenance', label: 'Ïº┘äÏÁ┘èÏº┘åÏ®', icon: '­ƒöº' },
+  { id: 'other', label: 'ÏúÏ«Ï▒┘ë', icon: '­ƒÆ¼' },
 ];
 
 function ExpensesScreen({ expenses, setExpenses, cyclicExpenses = [], setCyclicExpenses, showSuccess, onBack }) {
@@ -2822,99 +2920,83 @@ function ExpensesScreen({ expenses, setExpenses, cyclicExpenses = [], setCyclicE
   const [description, setDescription] = useState('');
   const [isCyclic, setIsCyclic] = useState(false);
   const [cycleNumber, setCycleNumber] = useState('1');
-  const [cycleUnit, setCycleUnit] = useState('شهر');
+  const [cycleUnit, setCycleUnit] = useState('Ï┤┘çÏ▒');
 
-  const allExpenses = useMemo(() => {
-    return [...expenses, ...cyclicExpenses.map(e => ({ ...e, isCyclic: true }))]
-      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-  }, [expenses, cyclicExpenses]);
-
-  const totalExpenses = useMemo(() => allExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0), [allExpenses]);
-  const avgExpense = allExpenses.length > 0 ? totalExpenses / allExpenses.length : 0;
-  const maxExpense = allExpenses.length > 0 ? Math.max(...allExpenses.map(e => Number(e.amount) || 0)) : 0;
+  const totalExpenses = useMemo(() => expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0), [expenses]);
+  const avgExpense = expenses.length > 0 ? totalExpenses / expenses.length : 0;
+  const maxExpense = expenses.length > 0 ? Math.max(...expenses.map(e => Number(e.amount) || 0)) : 0;
 
   const handleAdd = () => {
     const amt = Number(amount);
     if (!amt || amt <= 0 || !category) return;
-
-    if (isCyclic) {
-      const newCyclic = {
-        id: Date.now(),
-        category,
-        description: description.trim(),
-        amount: amt,
-        cycleNumber: Number(cycleNumber) || 1,
-        cycleUnit: cycleUnit === 'شهر' ? 'month' : 'day',
-        date: new Date().toISOString()
-      };
-      setCyclicExpenses(prev => [newCyclic, ...prev]);
-      showSuccess('تمت إضافة مصروف دوري ✓');
-    } else {
-      const newExpense = {
-        id: Date.now(),
-        category,
-        amount: amt,
-        description: description.trim(),
-        date: new Date().toISOString(),
-      };
-      setExpenses(prev => [newExpense, ...prev]);
-      showSuccess('تمت إضافة المصروف ✓');
-    }
-
+    const newExpense = {
+      id: Date.now(),
+      category,
+      amount: amt,
+      description: description.trim(),
+      date: new Date().toISOString(),
+    };
+    setExpenses(prev => [newExpense, ...prev]);
     setShowAddModal(false);
     setCategory('');
     setAmount('');
     setDescription('');
-    setIsCyclic(false);
-    setCycleNumber('1');
-    setCycleUnit('شهر');
+    showSuccess('Ï¬┘àÏ¬ ÏÑÏÂÏº┘üÏ® Ïº┘ä┘àÏÁÏ▒┘ê┘ü Ô£ô');
   };
 
-  const handleDelete = (id, isCyclicFlag) => {
-    if (isCyclicFlag) {
-      setCyclicExpenses(prev => prev.filter(e => e.id !== id));
-      showSuccess('تم حذف المصروف الدوري ✓');
-    } else {
-      setExpenses(prev => prev.filter(e => e.id !== id));
-      showSuccess('تم حذف المصروف ✓');
-    }
+  const handleDelete = (id) => {
+    setExpenses(prev => prev.filter(e => e.id !== id));
+    showSuccess('Ï¬┘à Ï¡Ï░┘ü Ïº┘ä┘àÏÁÏ▒┘ê┘ü Ô£ô');
   };
+
+  const stats = [
+    { label: 'Ïº┘ä┘àÏÁÏ▒┘ê┘üÏºÏ¬', value: expenses.length, color: C.orange, bg: '#FFF7ED', icon: <Receipt size={20} color={C.orange} /> },
+    { label: 'Ïº┘ä┘àÏ¬┘êÏ│ÏÀ', value: `${fmt(Math.round(avgExpense))} DA`, color: C.blue, bg: '#EFF6FF', icon: <BarChart3 size={20} color={C.blue} /> },
+    { label: 'Ïº┘äÏúÏ╣┘ä┘ë', value: `${fmt(maxExpense)} DA`, color: C.green, bg: '#F0FDF4', icon: <TrendingUp size={20} color={C.green} /> },
+  ];
 
   return (
-    <div style={{ paddingBottom: 100, direction: 'rtl', minHeight: '100vh', background: C.bg }}>
-      <AppHeader title="المصاريف" left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>} />
-
-      <div style={{ padding: '0 16px', marginTop: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
-          <div style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)', borderRadius: 16, padding: '16px', color: '#fff', boxShadow: '0 8px 24px rgba(239,68,68,0.2)' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>إجمالي المصاريف</div>
-            <div style={{ fontSize: 22, fontWeight: 900, marginTop: 4 }}>{fmt(totalExpenses)} <span style={{ fontSize: 12 }}>DA</span></div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: `1px solid ${C.border}`, boxShadow: C.shadow }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.gray }}>متوسط المصاريف</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>{fmt(avgExpense)} DA</div>
-            </div>
-            <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: `1px solid ${C.border}`, boxShadow: C.shadow }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.gray }}>أكبر مصروف</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>{fmt(maxExpense)} DA</div>
-            </div>
-          </div>
-        </div>
-
+    <div style={{ minHeight: '100vh', background: C.bg, direction: 'rtl' }}>
+      <div style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', padding: '20px 20px 24px', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: C.dark }}>سجل المصاريف</h3>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.blue, background: '#EFF6FF', padding: '4px 10px', borderRadius: 8 }}>{allExpenses.length} عملية</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color="#fff" /></HeaderIconButton>
+          </div>
+          <h1 style={{ fontSize: 20, fontWeight: 800 }}>Ïº┘ä┘àÏÁÏºÏ▒┘è┘ü</h1>
+          <div style={{ width: 40 }} />
         </div>
+      </div>
 
+      <div style={{ margin: '-12px 16px 0', background: 'linear-gradient(135deg, #EF4444, #DC2626)', borderRadius: 20, padding: '20px', color: '#fff', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏÁÏºÏ▒┘è┘ü</div>
+            <div style={{ fontSize: 32, fontWeight: 900 }}>{fmt(totalExpenses)} <span style={{ fontSize: 16 }}>DA</span></div>
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: 32, fontWeight: 900 }}>{expenses.length}</div>
+            <div style={{ fontSize: 12, opacity: 0.8 }}>┘àÏÁÏ▒┘ê┘ü</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, padding: '16px 16px 8px' }}>
+        {stats.map((s, i) => (
+          <div key={i} style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', boxShadow: C.shadow, textAlign: 'center', border: `1px solid ${C.border}` }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>{s.icon}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.dark, lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: s.color, marginTop: 6 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: '8px 16px' }}>
         {allExpenses.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', background: '#fff', borderRadius: 16, border: `1px solid ${C.border}` }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Receipt size={32} color={C.red} />
-            </div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: C.dark, marginBottom: 6 }}>لا توجد مصاريف</div>
-            <div style={{ fontSize: 14, color: C.gray, marginBottom: 20 }}>سجّل مصاريفك وتكاليفك</div>
-            <button onClick={() => setShowAddModal(true)} style={{ padding: '12px 32px', borderRadius: 14, background: `linear-gradient(135deg, #3B82F6, #2563EB)`, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>إضافة مصروف</button>
+          <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+            <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 32 }}>­ƒôï</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: C.dark, marginBottom: 6 }}>┘äÏº Ï¬┘êÏ¼Ï» ┘àÏÁÏºÏ▒┘è┘ü</div>
+            <div style={{ fontSize: 14, color: C.gray, marginBottom: 20 }}>Ï│Ï¼┘æ┘ä ┘àÏÁÏºÏ▒┘è┘ü┘â ┘êÏ¬┘âÏº┘ä┘è┘ü┘â</div>
+            <button onClick={() => setShowAddModal(true)} style={{ padding: '12px 32px', borderRadius: 14, background: `linear-gradient(135deg, #3B82F6, #2563EB)`, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>ÏÑÏÂÏº┘üÏ® ┘àÏÁÏ▒┘ê┘ü</button>
           </div>
         ) : (
           allExpenses.map(exp => {
@@ -2922,12 +3004,12 @@ function ExpensesScreen({ expenses, setExpenses, cyclicExpenses = [], setCyclicE
             return (
               <div key={exp.id} style={{ background: '#fff', borderRadius: 14, padding: '14px', marginBottom: 10, boxShadow: C.shadow, border: `1px solid ${C.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{cat?.icon || '📦'}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{cat?.icon || '­ƒôª'}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: C.dark, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {cat?.label || exp.category}
-                      {exp.isCyclic && <span style={{ fontSize: 10, background: C.blue, color: '#fff', padding: '2px 6px', borderRadius: 6 }}>دوري ({exp.cycleNumber} {exp.cycleUnit === 'month' ? 'شهر' : 'يوم'})</span>}
-                    </div>
+    {cat?.label || exp.category}
+    {exp.isCyclic && <span style={{ fontSize: 10, background: C.blue, color: '#fff', padding: '2px 6px', borderRadius: 6 }}>Ï»┘êÏ▒┘è ({exp.cycleNumber} {exp.cycleUnit})</span>}
+  </div>
                     {exp.description && <div style={{ fontSize: 12, color: C.gray, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.description}</div>}
                   </div>
                   <div style={{ textAlign: 'left' }}>
@@ -2956,12 +3038,12 @@ function ExpensesScreen({ expenses, setExpenses, cyclicExpenses = [], setCyclicE
               <button onClick={() => setShowAddModal(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <X size={18} color={C.dark} />
               </button>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>مصروف جديد</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>┘àÏÁÏ▒┘ê┘ü Ï¼Ï»┘èÏ»</h2>
               <div style={{ width: 36 }} />
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 24px' }}>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>الفئة *</label>
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïº┘ä┘üÏªÏ® *</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {EXPENSE_CATEGORIES.map(c => (
                     <button key={c.id} onClick={() => setCategory(c.id)} style={{ padding: '8px 14px', borderRadius: 12, border: category === c.id ? 'none' : `1px solid ${C.border}`, background: category === c.id ? C.blue : '#fff', color: category === c.id ? '#fff' : C.dark, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -2971,45 +3053,19 @@ function ExpensesScreen({ expenses, setExpenses, cyclicExpenses = [], setCyclicE
                 </div>
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>المبلغ *</label>
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïº┘ä┘àÏ¿┘äÏ║ *</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#FAFAFA', height: 48 }}>
                   <Wallet size={18} color={C.gray} />
                   <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, background: 'transparent', textAlign: 'left', direction: 'ltr' }} />
                 </div>
               </div>
-
-              {/* Cyclic Expense Toggle */}
-              <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#F0FDF4', borderRadius: 12, border: '1px solid #BBF7D0' }}>
-                <span style={{ fontSize: 14, fontWeight: 800, color: '#166534' }}>مصروف دوري</span>
-                <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 24 }}>
-                  <input type="checkbox" checked={isCyclic} onChange={e => setIsCyclic(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
-                  <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: isCyclic ? '#22C55E' : '#ccc', transition: '.4s', borderRadius: 24 }}>
-                    <span style={{ position: 'absolute', height: 18, width: 18, left: isCyclic ? 22 : 4, bottom: 3, backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }} />
-                  </span>
-                </label>
-              </div>
-
-              {/* Cyclic Details */}
-              {isCyclic && (
-                <div style={{ marginBottom: 16, padding: '16px', background: '#FAFAFA', borderRadius: 12, border: `1px solid ${C.border}` }}>
-                  <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 12, display: 'block', textAlign: 'right' }}>يتكرر كل</label>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <input type="number" inputMode="decimal" value={cycleNumber} onChange={e => setCycleNumber(e.target.value)} style={{ flex: 1, padding: '12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 16, outline: 'none', textAlign: 'center', direction: 'ltr' }} />
-                    <div style={{ display: 'flex', background: '#E5E7EB', borderRadius: 10, padding: 4 }}>
-                      <button onClick={() => setCycleUnit('شهر')} style={{ flex: 1, padding: '8px 16px', borderRadius: 8, border: 'none', background: cycleUnit === 'شهر' ? '#fff' : 'transparent', color: cycleUnit === 'شهر' ? C.dark : C.gray, fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: cycleUnit === 'شهر' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>شهر</button>
-                      <button onClick={() => setCycleUnit('يوم')} style={{ flex: 1, padding: '8px 16px', borderRadius: 8, border: 'none', background: cycleUnit === 'يوم' ? '#fff' : 'transparent', color: cycleUnit === 'يوم' ? C.dark : C.gray, fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: cycleUnit === 'يوم' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>يوم</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>الوصف (اختياري)</label>
-                <input value={description} onChange={e => setDescription(e.target.value)} placeholder="وصف المصروف..." style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïº┘ä┘êÏÁ┘ü (ÏºÏ«Ï¬┘èÏºÏ▒┘è)</label>
+                <input value={description} onChange={e => setDescription(e.target.value)} placeholder="┘êÏÁ┘ü Ïº┘ä┘àÏÁÏ▒┘ê┘ü..." style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
-                <button onClick={handleAdd} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: '#EF4444', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={18} /> إضافة</button>
+                <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
+                <button onClick={handleAdd} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: '#EF4444', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={18} /> ÏÑÏÂÏº┘üÏ®</button>
               </div>
             </div>
           </div>
@@ -3019,10 +3075,9 @@ function ExpensesScreen({ expenses, setExpenses, cyclicExpenses = [], setCyclicE
   );
 }
 
-
-/* ═══════════════════════════════════════════
-   SCREEN: CLIENTS (العملاء)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN: CLIENTS (Ïº┘äÏ╣┘à┘äÏºÏí)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function ClientsScreen({ clients, setClients, debts, todaySales, products, showSuccess, onBack, onOpenClient }) {
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -3054,7 +3109,7 @@ function ClientsScreen({ clients, setClients, debts, todaySales, products, showS
     setShowAddModal(false);
     setNewName('');
     setNewPhone('');
-    showSuccess('تمت إضافة العميل ✓');
+    showSuccess('Ï¬┘àÏ¬ ÏÑÏÂÏº┘üÏ® Ïº┘äÏ╣┘à┘è┘ä Ô£ô');
   };
 
   const getClientStats = (clientId) => {
@@ -3068,9 +3123,9 @@ function ClientsScreen({ clients, setClients, debts, todaySales, products, showS
       <div style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', padding: '20px 20px 24px', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color="#fff" /></HeaderIconButton>
+            <HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color="#fff" /></HeaderIconButton>
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 800 }}>العملاء</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 800 }}>Ïº┘äÏ╣┘à┘äÏºÏí</h1>
           <div style={{ width: 40 }} />
         </div>
       </div>
@@ -3078,7 +3133,7 @@ function ClientsScreen({ clients, setClients, debts, todaySales, products, showS
       <div style={{ padding: '12px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 12, padding: '10px 14px', border: `1px solid ${C.border}` }}>
           <Search size={18} color={C.gray} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث عن عميل..." style={{ border: 'none', outline: 'none', flex: 1, fontSize: 14, background: 'transparent', textAlign: 'right', direction: 'rtl' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Ï¿Ï¡Ï½ Ï╣┘å Ï╣┘à┘è┘ä..." style={{ border: 'none', outline: 'none', flex: 1, fontSize: 14, background: 'transparent', textAlign: 'right', direction: 'rtl' }} />
         </div>
       </div>
 
@@ -3088,22 +3143,22 @@ function ClientsScreen({ clients, setClients, debts, todaySales, products, showS
             <Users size={20} color={C.blue} />
           </div>
           <div>
-            <div style={{ fontSize: 13, color: C.gray }}>العملاء</div>
+            <div style={{ fontSize: 13, color: C.gray }}>Ïº┘äÏ╣┘à┘äÏºÏí</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: C.blue }}>{clients.length}</div>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
           <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>{clients.length}</div>
-            <div style={{ fontSize: 11, color: C.gray }}>نشط</div>
+            <div style={{ fontSize: 11, color: C.gray }}>┘åÏ┤ÏÀ</div>
           </div>
           <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>{debts?.length || 0}</div>
-            <div style={{ fontSize: 11, color: C.gray }}>الزيارات</div>
+            <div style={{ fontSize: 11, color: C.gray }}>Ïº┘äÏ▓┘èÏºÏ▒ÏºÏ¬</div>
           </div>
         </div>
         <div style={{ background: '#EFF6FF', borderRadius: 12, padding: '12px' }}>
-          <div style={{ fontSize: 12, color: C.gray }}>إجمالي المدفوع</div>
+          <div style={{ fontSize: 12, color: C.gray }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ»┘ü┘êÏ╣</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: C.blue }}>{fmt(totalSpent)} DA</div>
         </div>
       </div>
@@ -3111,7 +3166,7 @@ function ClientsScreen({ clients, setClients, debts, todaySales, products, showS
       <div style={{ padding: '12px 16px' }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 0', color: C.gray }}>
-            {clients.length === 0 ? 'لا يوجد عملاء بعد' : 'لا توجد نتائج'}
+            {clients.length === 0 ? '┘äÏº ┘è┘êÏ¼Ï» Ï╣┘à┘äÏºÏí Ï¿Ï╣Ï»' : '┘äÏº Ï¬┘êÏ¼Ï» ┘åÏ¬ÏºÏªÏ¼'}
           </div>
         ) : filtered.map(c => {
           const stats = getClientStats(c.id);
@@ -3120,10 +3175,10 @@ function ClientsScreen({ clients, setClients, debts, todaySales, products, showS
               <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: C.blue, flexShrink: 0 }}>{c.name.charAt(0)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.dark }}>{c.name}</div>
-                {c.phone && <div style={{ fontSize: 12, color: C.gray, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>📞 {c.phone}</div>}
+                {c.phone && <div style={{ fontSize: 12, color: C.gray, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>­ƒô× {c.phone}</div>}
                 <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-                  <span style={{ fontSize: 11, color: C.gray, display: 'flex', alignItems: 'center', gap: 3 }}>📅 {stats.visits} زيارة</span>
-                  <span style={{ fontSize: 11, color: C.blue, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>💰 {fmt(stats.total)} DA</span>
+                  <span style={{ fontSize: 11, color: C.gray, display: 'flex', alignItems: 'center', gap: 3 }}>­ƒôà {stats.visits} Ï▓┘èÏºÏ▒Ï®</span>
+                  <span style={{ fontSize: 11, color: C.blue, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>­ƒÆ░ {fmt(stats.total)} DA</span>
                 </div>
               </div>
               <ChevronLeft size={18} color={C.gray} />
@@ -3144,21 +3199,21 @@ function ClientsScreen({ clients, setClients, debts, todaySales, products, showS
               <button onClick={() => setShowAddModal(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <X size={18} color={C.dark} />
               </button>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>عميل جديد</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>Ï╣┘à┘è┘ä Ï¼Ï»┘èÏ»</h2>
               <div style={{ width: 36 }} />
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 24px' }}>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>اسم العميل *</label>
-                <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="أدخل اسم العميل" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>ÏºÏ│┘à Ïº┘äÏ╣┘à┘è┘ä *</label>
+                <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="ÏúÏ»Ï«┘ä ÏºÏ│┘à Ïº┘äÏ╣┘à┘è┘ä" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
               </div>
               <div style={{ marginBottom: 24 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>رقم الهاتف (اختياري)</label>
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ï▒┘é┘à Ïº┘ä┘çÏºÏ¬┘ü (ÏºÏ«Ï¬┘èÏºÏ▒┘è)</label>
                 <input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="0555555555" style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'ltr', background: '#FAFAFA', boxSizing: 'border-box' }} />
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
-                <button onClick={handleAdd} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={18} /> إضافة</button>
+                <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
+                <button onClick={handleAdd} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.blue, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={18} /> ÏÑÏÂÏº┘üÏ®</button>
               </div>
             </div>
           </div>
@@ -3168,9 +3223,9 @@ function ClientsScreen({ clients, setClients, debts, todaySales, products, showS
   );
 }
 
-/* ═══════════════════════════════════════════
-   SCREEN: CLIENT DETAIL (تفاصيل العميل)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN: CLIENT DETAIL (Ï¬┘üÏºÏÁ┘è┘ä Ïº┘äÏ╣┘à┘è┘ä)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function ClientDetailScreen({ client, setClients, debts, setDebts, expenses, todaySales, products, showSuccess, onBack }) {
   const [tab, setTab] = useState('debts');
   const [editing, setEditing] = useState(false);
@@ -3187,7 +3242,7 @@ function ClientDetailScreen({ client, setClients, debts, setDebts, expenses, tod
     if (!name) return;
     setClients(prev => prev.map(c => c.id === client.id ? { ...c, name, phone: editPhone.trim() } : c));
     setEditing(false);
-    showSuccess('تم تحديث بيانات العميل ✓');
+    showSuccess('Ï¬┘à Ï¬Ï¡Ï»┘èÏ½ Ï¿┘èÏº┘åÏºÏ¬ Ïº┘äÏ╣┘à┘è┘ä Ô£ô');
   };
 
   const handleCall = () => {
@@ -3200,15 +3255,15 @@ function ClientDetailScreen({ client, setClients, debts, setDebts, expenses, tod
 
   const handlePayDebt = (debtId, amount) => {
     setDebts(prev => prev.map(d => d.id === debtId ? { ...d, paid: (Number(d.paid) || 0) + amount, status: (Number(d.paid || 0) + amount) >= Number(d.amount) ? 'paid' : 'partial' } : d));
-    showSuccess('تم تسجيل الدفع ✓');
+    showSuccess('Ï¬┘à Ï¬Ï│Ï¼┘è┘ä Ïº┘äÏ»┘üÏ╣ Ô£ô');
   };
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, direction: 'rtl' }}>
       <div style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', padding: '20px 20px 24px', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color="#fff" /></HeaderIconButton>
-          <h1 style={{ fontSize: 20, fontWeight: 800 }}>العميل</h1>
+          <HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color="#fff" /></HeaderIconButton>
+          <h1 style={{ fontSize: 20, fontWeight: 800 }}>Ïº┘äÏ╣┘à┘è┘ä</h1>
           <div style={{ width: 40 }} />
         </div>
       </div>
@@ -3218,32 +3273,32 @@ function ClientDetailScreen({ client, setClients, debts, setDebts, expenses, tod
         {editing ? (
           <div style={{ marginBottom: 12 }}>
             <input value={editName} onChange={e => setEditName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 16, fontWeight: 700, textAlign: 'center', marginBottom: 8, boxSizing: 'border-box' }} />
-            <input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="الهاتف" style={{ width: '100%', padding: '10px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14, textAlign: 'center', boxSizing: 'border-box' }} />
+            <input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Ïº┘ä┘çÏºÏ¬┘ü" style={{ width: '100%', padding: '10px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14, textAlign: 'center', boxSizing: 'border-box' }} />
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <button onClick={handleSaveEdit} style={{ flex: 1, padding: '8px', borderRadius: 10, background: C.green, color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>حفظ</button>
-              <button onClick={() => { setEditing(false); setEditName(client.name); setEditPhone(client.phone || ''); }} style={{ flex: 1, padding: '8px', borderRadius: 10, background: '#F3F4F6', color: C.dark, border: 'none', fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
+              <button onClick={handleSaveEdit} style={{ flex: 1, padding: '8px', borderRadius: 10, background: C.green, color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Ï¡┘üÏ©</button>
+              <button onClick={() => { setEditing(false); setEditName(client.name); setEditPhone(client.phone || ''); }} style={{ flex: 1, padding: '8px', borderRadius: 10, background: '#F3F4F6', color: C.dark, border: 'none', fontWeight: 700, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
             </div>
           </div>
         ) : (
           <>
             <div style={{ fontSize: 20, fontWeight: 800, color: C.dark }}>{client.name}</div>
-            {client.phone && <div style={{ fontSize: 14, color: C.gray, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>📞 {client.phone}</div>}
+            {client.phone && <div style={{ fontSize: 14, color: C.gray, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>­ƒô× {client.phone}</div>}
           </>
         )}
         <div style={{ display: 'flex', gap: 8, marginTop: 14, justifyContent: 'center' }}>
-          <button onClick={handleCall} style={{ flex: 1, maxWidth: 140, padding: '10px', borderRadius: 12, background: C.blue, color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Phone size={16} /> اتصال</button>
+          <button onClick={handleCall} style={{ flex: 1, maxWidth: 140, padding: '10px', borderRadius: 12, background: C.blue, color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Phone size={16} /> ÏºÏ¬ÏÁÏº┘ä</button>
           <button onClick={handleWhatsApp} style={{ flex: 1, maxWidth: 140, padding: '10px', borderRadius: 12, background: C.green, color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>WhatsApp</button>
         </div>
         {!editing && (
-          <button onClick={() => setEditing(true)} style={{ marginTop: 8, padding: '8px 20px', borderRadius: 12, border: `1.5px solid ${C.border}`, background: '#fff', color: C.blue, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Pencil size={14} style={{ display: 'inline', marginLeft: 4 }} /> تعديل</button>
+          <button onClick={() => setEditing(true)} style={{ marginTop: 8, padding: '8px 20px', borderRadius: 12, border: `1.5px solid ${C.border}`, background: '#fff', color: C.blue, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Pencil size={14} style={{ display: 'inline', marginLeft: 4 }} /> Ï¬Ï╣Ï»┘è┘ä</button>
         )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, padding: '16px 16px 8px' }}>
         {[
-          { label: 'إجمالي المدفوع', value: `${fmt(totalSpent)} DA`, icon: <Wallet size={18} color={C.green} />, bg: '#F0FDF4' },
-          { label: 'الزيارات', value: visits, icon: <Users size={18} color={C.blue} />, bg: '#EFF6FF' },
-          { label: 'متوسط السلة', value: `${fmt(Math.round(avgBasket))} DA`, icon: <ShoppingCart size={18} color={C.orange} />, bg: '#FFF7ED' },
+          { label: 'ÏÑÏ¼┘àÏº┘ä┘è Ïº┘ä┘àÏ»┘ü┘êÏ╣', value: `${fmt(totalSpent)} DA`, icon: <Wallet size={18} color={C.green} />, bg: '#F0FDF4' },
+          { label: 'Ïº┘äÏ▓┘èÏºÏ▒ÏºÏ¬', value: visits, icon: <Users size={18} color={C.blue} />, bg: '#EFF6FF' },
+          { label: '┘àÏ¬┘êÏ│ÏÀ Ïº┘äÏ│┘äÏ®', value: `${fmt(Math.round(avgBasket))} DA`, icon: <ShoppingCart size={18} color={C.orange} />, bg: '#FFF7ED' },
         ].map((s, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: 14, padding: '14px 8px', boxShadow: C.shadow, textAlign: 'center', border: `1px solid ${C.border}` }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>{s.icon}</div>
@@ -3255,10 +3310,10 @@ function ClientDetailScreen({ client, setClients, debts, setDebts, expenses, tod
 
       <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
         <button onClick={() => setTab('debts')} style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', background: tab === 'debts' ? C.blue : '#F3F4F6', color: tab === 'debts' ? '#fff' : C.dark, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <Wallet size={16} /> الديون
+          <Wallet size={16} /> Ïº┘äÏ»┘è┘ê┘å
         </button>
         <button onClick={() => setTab('purchases')} style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', background: tab === 'purchases' ? C.blue : '#F3F4F6', color: tab === 'purchases' ? '#fff' : C.dark, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <Receipt size={16} /> المشتريات
+          <Receipt size={16} /> Ïº┘ä┘àÏ┤Ï¬Ï▒┘èÏºÏ¬
         </button>
       </div>
 
@@ -3267,7 +3322,7 @@ function ClientDetailScreen({ client, setClients, debts, setDebts, expenses, tod
           clientDebts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 0', color: C.gray }}>
               <Check size={40} color={C.green} style={{ margin: '0 auto 12px', display: 'block' }} />
-              لا توجد ديون مستحقة
+              ┘äÏº Ï¬┘êÏ¼Ï» Ï»┘è┘ê┘å ┘àÏ│Ï¬Ï¡┘éÏ®
             </div>
           ) : clientDebts.map(d => {
             const remaining = (Number(d.amount) || 0) - (Number(d.paid) || 0);
@@ -3275,26 +3330,26 @@ function ClientDetailScreen({ client, setClients, debts, setDebts, expenses, tod
               <div key={d.id} style={{ background: '#fff', borderRadius: 14, padding: '14px', marginBottom: 10, boxShadow: C.shadow, border: `1px solid ${C.border}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{fmt(d.amount)} DA</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 10, background: d.status === 'paid' ? '#F0FDF4' : d.status === 'partial' ? '#FFF7ED' : '#FEF2F2', color: d.status === 'paid' ? C.green : d.status === 'partial' ? C.orange : C.red }}>{d.status === 'paid' ? 'مدفوع' : d.status === 'partial' ? 'جزئي' : 'قيد الانتظار'}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 10, background: d.status === 'paid' ? '#F0FDF4' : d.status === 'partial' ? '#FFF7ED' : '#FEF2F2', color: d.status === 'paid' ? C.green : d.status === 'partial' ? C.orange : C.red }}>{d.status === 'paid' ? '┘àÏ»┘ü┘êÏ╣' : d.status === 'partial' ? 'Ï¼Ï▓Ïª┘è' : '┘é┘èÏ» Ïº┘äÏº┘åÏ¬Ï©ÏºÏ▒'}</span>
                 </div>
                 {d.note && <div style={{ fontSize: 12, color: C.gray, marginBottom: 8 }}>{d.note}</div>}
                 {remaining > 0 && (
-                  <button onClick={() => handlePayDebt(d.id, remaining)} style={{ width: '100%', padding: '8px', borderRadius: 10, background: C.green, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>دفع {fmt(remaining)} DA</button>
+                  <button onClick={() => handlePayDebt(d.id, remaining)} style={{ width: '100%', padding: '8px', borderRadius: 10, background: C.green, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Ï»┘üÏ╣ {fmt(remaining)} DA</button>
                 )}
               </div>
             );
           })
         ) : (
-          <div style={{ textAlign: 'center', padding: '32px 0', color: C.gray }}>لا توجد مشتريات مسجلة</div>
+          <div style={{ textAlign: 'center', padding: '32px 0', color: C.gray }}>┘äÏº Ï¬┘êÏ¼Ï» ┘àÏ┤Ï¬Ï▒┘èÏºÏ¬ ┘àÏ│Ï¼┘äÏ®</div>
         )}
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════
-   SCREEN: DEBTS (الديون)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   SCREEN: DEBTS (Ïº┘äÏ»┘è┘ê┘å)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack }) {
   const [filter, setFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -3331,7 +3386,7 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
     const newDebt = {
       id: Date.now(),
       clientId: Number(selectedClientId),
-      clientName: selectedClient?.name || 'زبون',
+      clientName: selectedClient?.name || 'Ï▓Ï¿┘ê┘å',
       amount: amt,
       paid: 0,
       status: 'pending',
@@ -3343,7 +3398,7 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
     setSelectedClientId('');
     setDebtAmount('');
     setDebtNote('');
-    showSuccess('تمت إضافة الدين ✓');
+    showSuccess('Ï¬┘àÏ¬ ÏÑÏÂÏº┘üÏ® Ïº┘äÏ»┘è┘å Ô£ô');
   };
 
   const handlePayDebt = (debtId, payAmount) => {
@@ -3352,33 +3407,33 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
       const newPaid = (Number(d.paid) || 0) + payAmount;
       return { ...d, paid: newPaid, status: newPaid >= Number(d.amount) ? 'paid' : 'partial' };
     }));
-    showSuccess('تم تسجيل الدفع ✓');
+    showSuccess('Ï¬┘à Ï¬Ï│Ï¼┘è┘ä Ïº┘äÏ»┘üÏ╣ Ô£ô');
   };
 
   const handleDeleteDebt = (debtId) => {
     setDebts(prev => prev.filter(d => d.id !== debtId));
-    showSuccess('تم حذف الدين ✓');
+    showSuccess('Ï¬┘à Ï¡Ï░┘ü Ïº┘äÏ»┘è┘å Ô£ô');
   };
 
   const stats = [
-    { label: 'مدفوع', value: `${fmt(paidTotal)} DA`, color: C.green, bg: '#F0FDF4', icon: <Check size={20} color={C.green} /> },
-    { label: 'جزئي', value: partialCount, color: C.orange, bg: '#FFF7ED', icon: <User size={20} color={C.orange} /> },
-    { label: 'قيد الانتظار', value: pendingCount, color: C.red, bg: '#FEF2F2', icon: <Clock size={20} color={C.red} /> },
+    { label: '┘àÏ»┘ü┘êÏ╣', value: `${fmt(paidTotal)} DA`, color: C.green, bg: '#F0FDF4', icon: <Check size={20} color={C.green} /> },
+    { label: 'Ï¼Ï▓Ïª┘è', value: partialCount, color: C.orange, bg: '#FFF7ED', icon: <User size={20} color={C.orange} /> },
+    { label: '┘é┘èÏ» Ïº┘äÏº┘åÏ¬Ï©ÏºÏ▒', value: pendingCount, color: C.red, bg: '#FEF2F2', icon: <Clock size={20} color={C.red} /> },
   ];
 
   const filters = [
-    { id: 'all', label: 'الكل', count: activeCount },
-    { id: 'pending', label: 'قيد الانتظار', count: pendingCount },
-    { id: 'partial', label: 'جزئي', count: partialCount },
-    { id: 'paid', label: 'مدفوع', count: paidCount },
+    { id: 'all', label: 'Ïº┘ä┘â┘ä', count: activeCount },
+    { id: 'pending', label: '┘é┘èÏ» Ïº┘äÏº┘åÏ¬Ï©ÏºÏ▒', count: pendingCount },
+    { id: 'partial', label: 'Ï¼Ï▓Ïª┘è', count: partialCount },
+    { id: 'paid', label: '┘àÏ»┘ü┘êÏ╣', count: paidCount },
   ];
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, direction: 'rtl' }}>
       <div style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', padding: '20px 20px 24px', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color="#fff" /></HeaderIconButton>
-          <h1 style={{ fontSize: 20, fontWeight: 800 }}>الديون</h1>
+          <HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color="#fff" /></HeaderIconButton>
+          <h1 style={{ fontSize: 20, fontWeight: 800 }}>Ïº┘äÏ»┘è┘ê┘å</h1>
           <div style={{ width: 40 }} />
         </div>
       </div>
@@ -3386,13 +3441,13 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
       <div style={{ margin: '-12px 16px 0', background: 'linear-gradient(135deg, #60A5FA, #2563EB)', borderRadius: 20, padding: '20px', color: '#fff', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>إجمالي غير المدفوع</div>
+            <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 4 }}>ÏÑÏ¼┘àÏº┘ä┘è Ï║┘èÏ▒ Ïº┘ä┘àÏ»┘ü┘êÏ╣</div>
             <div style={{ fontSize: 32, fontWeight: 900 }}>{fmt(totalUnpaid)} <span style={{ fontSize: 16 }}>DA</span></div>
-            <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>إجمالي الديون: {fmt(safeDebts.reduce((s, d) => s + (Number(d.amount) || 0), 0))} DA</div>
+            <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>ÏÑÏ¼┘àÏº┘ä┘è Ïº┘äÏ»┘è┘ê┘å: {fmt(safeDebts.reduce((s, d) => s + (Number(d.amount) || 0), 0))} DA</div>
           </div>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: 32, fontWeight: 900 }}>{activeCount}</div>
-            <div style={{ fontSize: 12, opacity: 0.8 }}>ديون نشطة</div>
+            <div style={{ fontSize: 12, opacity: 0.8 }}>Ï»┘è┘ê┘å ┘åÏ┤ÏÀÏ®</div>
           </div>
         </div>
       </div>
@@ -3418,8 +3473,8 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
       <div style={{ padding: '8px 16px' }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🤝</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: C.gray }}>لا توجد ديون</div>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>­ƒñØ</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.gray }}>┘äÏº Ï¬┘êÏ¼Ï» Ï»┘è┘ê┘å</div>
           </div>
         ) : filtered.map(d => {
           const remaining = (Number(d.amount) || 0) - (Number(d.paid) || 0);
@@ -3428,26 +3483,26 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
             <div key={d.id} style={{ background: '#fff', borderRadius: 14, padding: '14px', marginBottom: 10, boxShadow: C.shadow, border: `1px solid ${C.border}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: C.blue, flexShrink: 0 }}>{(d.clientName || 'ز').charAt(0)}</div>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: C.blue, flexShrink: 0 }}>{(d.clientName || 'Ï▓').charAt(0)}</div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{d.clientName || 'زبون'}</div>
-                    <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>منذ {getDaysAgo(d.date)} أيام</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{d.clientName || 'Ï▓Ï¿┘ê┘å'}</div>
+                    <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>┘à┘åÏ░ {getDaysAgo(d.date)} Ïú┘èÏº┘à</div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, padding: '4px 10px', borderRadius: 10, background: d.status === 'paid' ? '#F0FDF4' : d.status === 'partial' ? '#FFF7ED' : '#FEF2F2', color: d.status === 'paid' ? C.green : d.status === 'partial' ? C.orange : C.red }}>{d.status === 'paid' ? 'مدفوع' : d.status === 'partial' ? 'جزئي' : 'قيد الانتظار'}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, padding: '4px 10px', borderRadius: 10, background: d.status === 'paid' ? '#F0FDF4' : d.status === 'partial' ? '#FFF7ED' : '#FEF2F2', color: d.status === 'paid' ? C.green : d.status === 'partial' ? C.orange : C.red }}>{d.status === 'paid' ? '┘àÏ»┘ü┘êÏ╣' : d.status === 'partial' ? 'Ï¼Ï▓Ïª┘è' : '┘é┘èÏ» Ïº┘äÏº┘åÏ¬Ï©ÏºÏ▒'}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span style={{ fontSize: 14, fontWeight: 800, color: C.dark }}>{fmt(Number(d.amount) || 0)} DA</span>
-                {remaining > 0 && <span style={{ fontSize: 12, color: C.red, fontWeight: 700 }}>المتبقي: {fmt(remaining)} DA</span>}
+                {remaining > 0 && <span style={{ fontSize: 12, color: C.red, fontWeight: 700 }}>Ïº┘ä┘àÏ¬Ï¿┘é┘è: {fmt(remaining)} DA</span>}
               </div>
               {d.note && <div style={{ fontSize: 12, color: C.gray, marginBottom: 8 }}>{d.note}</div>}
               <div style={{ display: 'flex', gap: 8 }}>
                 {remaining > 0 && (
                   <>
-                    <button onClick={() => handlePayDebt(d.id, remaining)} style={{ flex: 1, padding: '8px', borderRadius: 10, background: C.green, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>دفع كامل</button>
-                    <button onClick={() => { setPayingDebtId(d.id); setPayAmount(''); }} style={{ flex: 1, padding: '8px', borderRadius: 10, background: '#EFF6FF', color: C.blue, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>دفع جزئي</button>
+                    <button onClick={() => handlePayDebt(d.id, remaining)} style={{ flex: 1, padding: '8px', borderRadius: 10, background: C.green, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Ï»┘üÏ╣ ┘âÏº┘à┘ä</button>
+                    <button onClick={() => { setPayingDebtId(d.id); setPayAmount(''); }} style={{ flex: 1, padding: '8px', borderRadius: 10, background: '#EFF6FF', color: C.blue, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Ï»┘üÏ╣ Ï¼Ï▓Ïª┘è</button>
                   </>
                 )}
                 <button onClick={() => handleDeleteDebt(d.id)} style={{ padding: '8px 12px', borderRadius: 10, background: '#FEE2E2', border: 'none', cursor: 'pointer' }}>
@@ -3471,34 +3526,34 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
               <button onClick={() => setShowAddModal(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <X size={18} color={C.dark} />
               </button>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>دين جديد</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>Ï»┘è┘å Ï¼Ï»┘èÏ»</h2>
               <div style={{ width: 36 }} />
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 24px' }}>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>العميل *</label>
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïº┘äÏ╣┘à┘è┘ä *</label>
                 <div onClick={() => setShowClientPicker(true)} style={{ padding: '14px', borderRadius: 12, border: `2px dashed ${selectedClientId ? C.green : '#FCA5A5'}`, background: selectedClientId ? '#F0FDF4' : '#FEF2F2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Users size={20} color={selectedClientId ? C.green : C.red} />
-                    <span style={{ fontSize: 14, fontWeight: 700, color: selectedClientId ? C.dark : C.red }}>{selectedClient ? selectedClient.name : 'اختر عميل'}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: selectedClientId ? C.dark : C.red }}>{selectedClient ? selectedClient.name : 'ÏºÏ«Ï¬Ï▒ Ï╣┘à┘è┘ä'}</span>
                   </div>
                   <ChevronLeft size={18} color={C.gray} />
                 </div>
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>المبلغ *</label>
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïº┘ä┘àÏ¿┘äÏ║ *</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', borderRadius: 12, border: `1px solid ${C.border}`, background: '#FAFAFA', height: 48 }}>
                   <Wallet size={18} color={C.gray} />
                   <input type="number" inputMode="decimal" value={debtAmount} onChange={e => setDebtAmount(e.target.value)} placeholder="0" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, background: 'transparent', textAlign: 'left', direction: 'ltr' }} />
                 </div>
               </div>
               <div style={{ marginBottom: 24 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>ملاحظة (اختياري)</label>
-                <input value={debtNote} onChange={e => setDebtNote(e.target.value)} placeholder="أضف ملاحظة..." style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>┘à┘äÏºÏ¡Ï©Ï® (ÏºÏ«Ï¬┘èÏºÏ▒┘è)</label>
+                <input value={debtNote} onChange={e => setDebtNote(e.target.value)} placeholder="ÏúÏÂ┘ü ┘à┘äÏºÏ¡Ï©Ï®..." style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14, outline: 'none', textAlign: 'right', direction: 'rtl', background: '#FAFAFA', boxSizing: 'border-box' }} />
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
-                <button onClick={handleAdd} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: `linear-gradient(135deg, #3B82F6, #2563EB)`, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={18} /> إضافة</button>
+                <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
+                <button onClick={handleAdd} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: `linear-gradient(135deg, #3B82F6, #2563EB)`, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={18} /> ÏÑÏÂÏº┘üÏ®</button>
               </div>
             </div>
           </div>
@@ -3508,11 +3563,11 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
               <div onClick={() => setShowClientPicker(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 230 }} />
               <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, maxHeight: '60vh', background: '#fff', borderRadius: '24px 24px 0 0', zIndex: 231, animation: 'slideUp 0.25s ease', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: C.dark, textAlign: 'center' }}>اختر عميل</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: C.dark, textAlign: 'center' }}>ÏºÏ«Ï¬Ï▒ Ï╣┘à┘è┘ä</h3>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
                   {clients.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '24px', color: C.gray }}>لا يوجد عملاء. أضف عميل أولاً من صفحة العملاء.</div>
+                    <div style={{ textAlign: 'center', padding: '24px', color: C.gray }}>┘äÏº ┘è┘êÏ¼Ï» Ï╣┘à┘äÏºÏí. ÏúÏÂ┘ü Ï╣┘à┘è┘ä Ïú┘ê┘äÏº┘ï ┘à┘å ÏÁ┘üÏ¡Ï® Ïº┘äÏ╣┘à┘äÏºÏí.</div>
                   ) : clients.map(c => (
                     <div key={c.id} onClick={() => { setSelectedClientId(String(c.id)); setShowClientPicker(false); }} style={{ padding: '12px', borderRadius: 12, marginBottom: 8, background: String(c.id) === selectedClientId ? '#EFF6FF' : '#F9FAFB', border: String(c.id) === selectedClientId ? `1.5px solid ${C.blue}` : `1px solid ${C.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: C.blue }}>{c.name.charAt(0)}</div>
@@ -3533,7 +3588,7 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
         <>
           <div onClick={() => setPayingDebtId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 240 }} />
           <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, background: '#fff', borderRadius: '24px 24px 0 0', zIndex: 241, animation: 'slideUp 0.25s ease', padding: '16px 18px 24px' }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark, textAlign: 'center', marginBottom: 16 }}>دفع جزئي</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark, textAlign: 'center', marginBottom: 16 }}>Ï»┘üÏ╣ Ï¼Ï▓Ïª┘è</h2>
             {(() => {
               const debt = safeDebts.find(d => d.id === payingDebtId);
               if (!debt) return null;
@@ -3541,11 +3596,11 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
               return (
                 <>
                   <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '12px 14px', marginBottom: 12, textAlign: 'center' }}>
-                    <div style={{ fontSize: 13, color: C.gray }}>المتبقي من الدين</div>
+                    <div style={{ fontSize: 13, color: C.gray }}>Ïº┘ä┘àÏ¬Ï¿┘é┘è ┘à┘å Ïº┘äÏ»┘è┘å</div>
                     <div style={{ fontSize: 20, fontWeight: 900, color: C.dark }}>{fmt(remaining)} DA</div>
                   </div>
                   <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>المبلغ المدفوع *</label>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 8, display: 'block', textAlign: 'right' }}>Ïº┘ä┘àÏ¿┘äÏ║ Ïº┘ä┘àÏ»┘ü┘êÏ╣ *</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', borderRadius: 12, border: `2px solid ${C.border}`, background: '#FAFAFA', height: 52 }}>
                       <Wallet size={20} color={C.gray} />
                       <input type="number" inputMode="decimal" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="0" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 20, fontWeight: 800, background: 'transparent', textAlign: 'left', direction: 'ltr' }} />
@@ -3553,17 +3608,17 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
                     </div>
                   </div>
                   <button onClick={() => setPayAmount(String(remaining))} style={{ width: '100%', marginBottom: 12, padding: '10px', borderRadius: 12, border: 'none', background: '#EFF6FF', color: C.blue, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    دفع المبلغ كاملاً ({fmt(remaining)} DA)
+                    Ï»┘üÏ╣ Ïº┘ä┘àÏ¿┘äÏ║ ┘âÏº┘à┘äÏº┘ï ({fmt(remaining)} DA)
                   </button>
                   <div style={{ display: 'flex', gap: 10 }}>
-                    <button onClick={() => setPayingDebtId(null)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
+                    <button onClick={() => setPayingDebtId(null)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${C.border}`, background: '#fff', color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>ÏÑ┘äÏ║ÏºÏí</button>
                     <button onClick={() => {
                       const amt = Number(payAmount);
                       if (!amt || amt <= 0) return;
                       handlePayDebt(payingDebtId, amt);
                       setPayingDebtId(null);
                       setPayAmount('');
-                    }} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.green, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>دفع</button>
+                    }} style={{ flex: 1, padding: '14px', borderRadius: 14, border: 'none', background: C.green, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Ï»┘üÏ╣</button>
                   </div>
                 </>
               );
@@ -3575,21 +3630,21 @@ function DebtsScreen({ debts, setDebts, clients, setClients, showSuccess, onBack
   );
 }
 
-/* ═══════════════════════════════════════════
-   PLACEHOLDER SCREEN (قيد الإنشاء)
-   ═══════════════════════════════════════════ */
+/* ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+   PLACEHOLDER SCREEN (┘é┘èÏ» Ïº┘äÏÑ┘åÏ┤ÏºÏí)
+   ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ */
 export function PlaceholderScreen({ title, onBack }) {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, direction: 'rtl' }}>
       <AppHeader
         title={title}
-        left={<HeaderIconButton label="رجوع" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
+        left={<HeaderIconButton label="Ï▒Ï¼┘êÏ╣" onClick={onBack}><ChevronLeft size={22} color={C.dark} /></HeaderIconButton>}
         border
       />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', textAlign: 'center' }}>
-        <div style={{ width: 88, height: 88, borderRadius: '50%', background: '#fff', boxShadow: C.shadow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, marginBottom: 20 }}>🚧</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>هذه الصفحة قيد الإنشاء</div>
-        <div style={{ fontSize: 14, color: C.gray, marginTop: 8 }}>قريباً</div>
+        <div style={{ width: 88, height: 88, borderRadius: '50%', background: '#fff', boxShadow: C.shadow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, marginBottom: 20 }}>­ƒÜº</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: C.dark }}>┘çÏ░┘ç Ïº┘äÏÁ┘üÏ¡Ï® ┘é┘èÏ» Ïº┘äÏÑ┘åÏ┤ÏºÏí</div>
+        <div style={{ fontSize: 14, color: C.gray, marginTop: 8 }}>┘éÏ▒┘èÏ¿Ïº┘ï</div>
       </div>
     </div>
   );
